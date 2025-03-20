@@ -47,6 +47,35 @@ def generar_numero_random(digitos=2):
     max_valor = (10 ** digitos) - 1
     return random.randint(min_valor, max_valor)
 
+
+
+def imprimir_banner_script():
+    """
+    Imprime un banner ASCII decorativo e impresionante con el texto 'ACERO SCRIPT'
+    """
+    banner = """
+    ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+    ║                                                                                                          ║
+    ║       ▄▄▄       ▄████▄  ▓█████  ██▀███   ▒█████      ██████  ▄████▄   ███▀███   ██▓ ██▓███  ▄▄▄█████▓    ║
+    ║      ▒████▄    ▒██▀ ▀█  ▓█   ▀ ▓██ ▒ ██▒▒██▒  ██▒   ▒██    ▒ ▒██▀ ▀█  ▓██ ▒ ██▒▓██▒▓██░  ██▒▓  ██▒ ▓▒    ║
+    ║      ▒██  ▀█▄  ▒▓█    ▄ ▒███   ▓██ ░▄█ ▒▒██░  ██▒   ░ ▓██▄   ▒▓█    ▄ ▓██ ░▄█ ▒▒██▒▓██░ ██▓▒▒ ▓██░ ▒░    ║
+    ║      ░██▄▄▄▄██ ▒▓▓▄ ▄██▒▒▓█  ▄ ▒██▀▀█▄  ▒██   ██░     ▒   ██▒▒▓▓▄ ▄██▒▒██▀▀█▄  ░██░▒██▄█▓▒ ▒░ ▓██▓ ░     ║
+    ║       ▓█   ▓██▒▒ ▓███▀ ░░▒████▒░██▓ ▒██▒░ ████▓▒░   ▒██████▒▒▒ ▓███▀ ░░██▓ ▒██▒░██░▒██▒ ░  ░  ▒██▒ ░     ║
+    ║       ▒▒   ▓▒█░░ ░▒ ▒  ░░░ ▒░ ░░ ▒▓ ░▒▓░░ ▒░▒░▒░    ▒ ▒▓▒ ▒ ░░ ░▒ ▒  ░░ ▒▓ ░▒▓░░▓  ▒▓▒░ ░  ░  ▒ ░░       ║
+    ║        ▒   ▒▒ ░  ░  ▒    ░ ░  ░  ░▒ ░ ▒░  ░ ▒ ▒░    ░ ░▒  ░ ░  ░  ▒     ░▒ ░ ▒░ ▒ ░░▒ ░         ░        ║
+    ║        ░   ▒   ░           ░     ░░   ░ ░ ░ ░ ▒     ░  ░  ░  ░          ░░   ░  ▒ ░░░         ░          ║
+    ║            ░  ░░ ░         ░  ░   ░         ░ ░           ░  ░ ░         ░      ░                        ║
+    ║                ░                                              ░                                          ║
+    ║                                                                                                          ║
+    ║                        Herramienta para Automatización de Aceros en Prelosas                             ║
+    ║                                      by DODOD SOLUTIONS                                                  ║
+    ║                                                                                                          ║
+    ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+    """
+    print(banner)
+
+
+
 def proceso_dxf(dxf_path, excel_path, output_path, valores_predeterminados=None):
     """
     Función para ejecutar el procesamiento de DXF con valores personalizados.
@@ -58,6 +87,7 @@ def proceso_dxf(dxf_path, excel_path, output_path, valores_predeterminados=None)
     sys.stderr = open('CONOUT$', 'w')
 
     print("Iniciando procesamiento de DXF...")
+    print(imprimir_banner_script())
     print(f"Archivo de entrada: {dxf_path}")
     print(f"Archivo Excel: {excel_path}")
     print(f"Archivo de salida: {output_path}")

@@ -808,6 +808,20 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 print(f"No se pudo extraer información del diámetro en el texto '{texto}'")
                         except Exception as e:
                             print(f"Error al procesar texto vertical en PRELOSA ALIGERADA 20 '{texto}': {e}")
+                
+                print("Limpiando celdas G5 y G15 después de procesar la prelosa...")
+                try:
+                    # Limpiar G5 y relacionadas
+                    ws.range('G5').value = 0
+
+                    
+                    # Limpiar G15 y relacionadas
+                    ws.range('G15').value = 0
+ 
+                    
+                    print("Celdas G5")
+                except Exception as e:
+                    print(f"Error al limpiar celdas G5 y G15: {e}")
 
                         # Casos especiales para PRELOSA ALIGERADA 20 - 2 SENT
             elif tipo_prelosa == "PRELOSA ALIGERADA 20 - 2 SENT":
@@ -933,25 +947,23 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 print(f"No se pudo extraer información del diámetro en el texto vertical '{texto}'")
                         except Exception as e:
                             print(f"Error al procesar segundo texto vertical en PRELOSA ALIGERADA 20 - 2 SENT '{texto}': {e}")
+                
+                print("Limpiando celdas G5 y G15 después de procesar la prelosa...")
+                try:
+                    # Limpiar G5 y relacionadas
+                    ws.range('G5').value = 0
+
+                    # Limpiar G15 y relacionadas
+                    ws.range('G15').value = 0
+ 
+                    
+                    print("Celdas G5 limpiadas correctamente")
+                except Exception as e:
+                    print(f"Error al limpiar celdas G5 y G15: {e}")
                         # Para PRELOSA MACIZA
 # Aquí está la sección corregida para el procesamiento de textos horizontales
+# Para la sección de PRELOSA MACIZA, agregar esta limpieza al final
             elif tipo_prelosa == "PRELOSA MACIZA":
-                # Guardar los valores de las fórmulas antes de modificar el Excel
-                try:
-                    formula_k8 = ws.range('K8').formula
-                    formula_k17 = ws.range('K17').formula
-                    formula_k18 = ws.range('K18').formula
-                    print("VALORES ACTUALES PARA PRESERVAR:")
-                    print(f"  Fórmula K8 actual = {formula_k8}")
-                    print(f"  Fórmula K17 actual = {formula_k17}")
-                    print(f"  Fórmula K18 actual = {formula_k18}")
-                    print("----------------------------------------")
-                except Exception as e:
-                    print(f"Error al leer fórmulas originales: {e}")
-                    formula_k8 = None
-                    formula_k17 = None
-                    formula_k18 = None
-
                 # Procesar textos horizontales
                 if len(textos_horizontal) > 0:
                     print(f"Procesando {len(textos_horizontal)} textos horizontales en PRELOSA MACIZA")
@@ -1141,60 +1153,19 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             print(f"Error al procesar segundo texto vertical en PRELOSA MACIZA '{texto}': {e}")
                 
                 # Después de actualizar los valores en J, forzar recálculo
-                print("Forzando recálculo de Excel...")
+                print("Limpiando celdas G5 y G15 después de procesar la prelosa...")
                 try:
-                    # Obtener los valores J antes del recálculo (para diagnóstico)
-                    j4_valor = ws.range('J4').value if len(textos_horizontal) > 0 else None
-                    j14_valor = ws.range('J14').value if len(textos_vertical) > 0 else None
-                    print(f"Valores en celdas J antes del recálculo: J4 = {j4_valor}, J14 = {j14_valor}")
+                    # Limpiar G5 y relacionadas
+                    ws.range('G5').value = 0
+    
                     
-                    # Forzar a Excel a recalcular sin tocar las celdas K
-                    ws.range('A1').select()  # Seleccionar otra celda para no interferir
-                    wb.app.calculate()  # Recalcular
+                    # Limpiar G15 y relacionadas
+                    ws.range('G15').value = 0
+
                     
-                    # Verificar que las fórmulas se mantienen
-                    print("VERIFICANDO FÓRMULAS DESPUÉS DE RECÁLCULO:")
-                    print(f"  Fórmula K8 después = {ws.range('K8').formula}")
-                    print(f"  Fórmula K17 después = {ws.range('K17').formula}")
-                    print(f"  Fórmula K18 después = {ws.range('K18').formula}")
-                    
-                    # Si las fórmulas se han perdido, restaurarlas
-                    if formula_k8 and ws.range('K8').formula == "":
-                        print("Restaurando fórmula en K8...")
-                        ws.range('K8').formula = formula_k8
-                        wb.app.calculate()  # Recalcular después de restaurar
-                    
-                    if formula_k17 and ws.range('K17').formula == "":
-                        print("Restaurando fórmula en K17...")
-                        ws.range('K17').formula = formula_k17
-                        wb.app.calculate()  # Recalcular después de restaurar
-                        
-                    if formula_k18 and ws.range('K18').formula == "":
-                        print("Restaurando fórmula en K18...")
-                        ws.range('K18').formula = formula_k18
-                        wb.app.calculate()  # Recalcular después de restaurar
-                    
-                    # Obtener los valores calculados por Excel
-                    valor_k8 = ws.range('K8').value
-                    valor_k17 = ws.range('K17').value
-                    valor_k18 = ws.range('K18').value
-                    
-                    print("VALORES FINALES CALCULADOS POR EXCEL:")
-                    print(f"  Celda K8 = {valor_k8}")
-                    print(f"  Celda K17 = {valor_k17}")
-                    print(f"  Celda K18 = {valor_k18}")
-                    
+                    print("Celdas G5 y G15 limpiadas correctamente")
                 except Exception as e:
-                    print(f"Error al recalcular o restaurar fórmulas: {e}")
-                    # Usar valores de respaldo si hay un error
-                    valor_k8 = ws.range('J4').value
-                    valor_k17 = ws.range('J14').value
-                    valor_k18 = 0.075  # Valor de respaldo para K18
-                    
-                    print("USANDO VALORES DE RESPALDO DEBIDO A ERROR:")
-                    print(f"  Celda K8 (respaldo) = {valor_k8}")
-                    print(f"  Celda K17 (respaldo) = {valor_k17}")
-                    print(f"  Celda K18 (respaldo) = {valor_k18}")
+                    print(f"Error al limpiar celdas G5 y G15: {e}")
             else:
                 # Procesar acero horizontal (G4, H4, J4)
                 for i, texto in enumerate(textos_horizontal):
