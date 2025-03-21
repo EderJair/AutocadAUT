@@ -825,8 +825,9 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
 
                         # Casos especiales para PRELOSA ALIGERADA 20 - 2 SENT
             elif tipo_prelosa == "PRELOSA ALIGERADA 20 - 2 SENT":
-                # Usar el espaciamiento de los valores predeterminados
+                # Usar el espaciamiento de los valores predeterminados (viene del tkinter)
                 dist_aligerada2sent = float(default_valores.get('PRELOSA ALIGERADA 20 - 2 SENT', {}).get('espaciamiento', 0.605))
+                print(f"Usando espaciamiento predeterminado para PRELOSA ALIGERADA 20 - 2 SENT: {dist_aligerada2sent}")
                 
                 # Caso 1: Si tenemos textos horizontales
                 if len(textos_horizontal) > 0:
@@ -836,6 +837,13 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     if len(textos_horizontal) >= 1:
                         texto = textos_horizontal[0]
                         try:
+                            # Extraer cantidad (número antes de ∅)
+                            cantidad_match = re.search(r'^(\d+)∅', texto)
+                            if cantidad_match:
+                                cantidad = cantidad_match.group(1)
+                            else:
+                                cantidad = "1"  # Si no hay número antes de ∅, la cantidad es 1
+                            
                             # Extraer diámetro del texto (ej: "1∅3/8"")
                             diametro_match = re.search(r'∅([\d/]+)', texto)
                             if diametro_match:
@@ -846,15 +854,17 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 else:
                                     diametro_con_comillas = diametro
                                 
-                                cantidad = "1"  # Por defecto
-                                separacion_decimal = dist_aligerada2sent  # Usar el valor específico para 2SENT
+                                cantidad = int(cantidad)  # Convertir a entero
+                                # Usar el valor predeterminado para el espaciamiento
+                                separacion_decimal = dist_aligerada2sent
                                 
                                 # Escribir en Excel
-                                ws.range('G4').value = int(cantidad)
+                                ws.range('G4').value = cantidad
                                 ws.range('H4').value = diametro_con_comillas
                                 ws.range('J4').value = separacion_decimal
                                 
                                 print(f"Colocando en el excel primer texto horizontal: {cantidad} -> G4, {diametro_con_comillas} -> H4, {separacion_decimal} -> J4")
+                                print(f"NOTA: Usando espaciamiento predeterminado porque no viene en el texto")
                             else:
                                 print(f"No se pudo extraer información del diámetro en el texto '{texto}'")
                         except Exception as e:
@@ -864,6 +874,13 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     if len(textos_horizontal) >= 2:
                         texto = textos_horizontal[1]
                         try:
+                            # Extraer cantidad (número antes de ∅)
+                            cantidad_match = re.search(r'^(\d+)∅', texto)
+                            if cantidad_match:
+                                cantidad = cantidad_match.group(1)
+                            else:
+                                cantidad = "1"  # Si no hay número antes de ∅, la cantidad es 1
+                            
                             # Extraer diámetro del texto (ej: "1∅1/2"")
                             diametro_match = re.search(r'∅([\d/]+)', texto)
                             if diametro_match:
@@ -874,15 +891,17 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 else:
                                     diametro_con_comillas = diametro
                                 
-                                cantidad = "1"  # Por defecto
-                                separacion_decimal = dist_aligerada2sent  # Usar el valor específico para 2SENT
+                                cantidad = int(cantidad)  # Convertir a entero
+                                # Usar el valor predeterminado para el espaciamiento
+                                separacion_decimal = dist_aligerada2sent
                                 
                                 # Escribir en Excel
-                                ws.range('G5').value = int(cantidad)
+                                ws.range('G5').value = cantidad
                                 ws.range('H5').value = diametro_con_comillas
                                 ws.range('J5').value = separacion_decimal
                                 
                                 print(f"Colocando en el excel segundo texto horizontal: {cantidad} -> G5, {diametro_con_comillas} -> H5, {separacion_decimal} -> J5")
+                                print(f"NOTA: Usando espaciamiento predeterminado porque no viene en el texto")
                             else:
                                 print(f"No se pudo extraer información del diámetro en el texto '{texto}'")
                         except Exception as e:
@@ -896,6 +915,13 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     if len(textos_vertical) >= 1:
                         texto = textos_vertical[0]
                         try:
+                            # Extraer cantidad (número antes de ∅)
+                            cantidad_match = re.search(r'^(\d+)∅', texto)
+                            if cantidad_match:
+                                cantidad = cantidad_match.group(1)
+                            else:
+                                cantidad = "1"  # Si no hay número antes de ∅, la cantidad es 1
+                            
                             # Extraer diámetro del texto
                             diametro_match = re.search(r'∅([\d/]+)', texto)
                             if diametro_match:
@@ -906,15 +932,17 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 else:
                                     diametro_con_comillas = diametro
                                 
-                                cantidad = "1"  # Por defecto
-                                separacion_decimal = dist_aligerada2sent  # Usar el valor específico para 2SENT
+                                cantidad = int(cantidad)  # Convertir a entero
+                                # Usar el valor predeterminado para el espaciamiento
+                                separacion_decimal = dist_aligerada2sent
                                 
                                 # Escribir en Excel
-                                ws.range('G14').value = int(cantidad)
+                                ws.range('G14').value = cantidad
                                 ws.range('H14').value = diametro_con_comillas
                                 ws.range('J14').value = separacion_decimal
                                 
                                 print(f"Colocando en el excel primer texto vertical: {cantidad} -> G14, {diametro_con_comillas} -> H14, {separacion_decimal} -> J14")
+                                print(f"NOTA: Usando espaciamiento predeterminado porque no viene en el texto")
                             else:
                                 print(f"No se pudo extraer información del diámetro en el texto vertical '{texto}'")
                         except Exception as e:
@@ -924,6 +952,13 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     if len(textos_vertical) >= 2:
                         texto = textos_vertical[1]
                         try:
+                            # Extraer cantidad (número antes de ∅)
+                            cantidad_match = re.search(r'^(\d+)∅', texto)
+                            if cantidad_match:
+                                cantidad = cantidad_match.group(1)
+                            else:
+                                cantidad = "1"  # Si no hay número antes de ∅, la cantidad es 1
+                            
                             # Extraer diámetro del texto
                             diametro_match = re.search(r'∅([\d/]+)', texto)
                             if diametro_match:
@@ -934,35 +969,54 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 else:
                                     diametro_con_comillas = diametro
                                 
-                                cantidad = "1"  # Por defecto
-                                separacion_decimal = dist_aligerada2sent  # Usar el valor específico para 2SENT
+                                cantidad = int(cantidad)  # Convertir a entero
+                                # Usar el valor predeterminado para el espaciamiento
+                                separacion_decimal = dist_aligerada2sent
                                 
                                 # Escribir en Excel
-                                ws.range('G15').value = int(cantidad)
+                                ws.range('G15').value = cantidad
                                 ws.range('H15').value = diametro_con_comillas
                                 ws.range('J15').value = separacion_decimal
                                 
                                 print(f"Colocando en el excel segundo texto vertical: {cantidad} -> G15, {diametro_con_comillas} -> H15, {separacion_decimal} -> J15")
+                                print(f"NOTA: Usando espaciamiento predeterminado porque no viene en el texto")
                             else:
                                 print(f"No se pudo extraer información del diámetro en el texto vertical '{texto}'")
                         except Exception as e:
                             print(f"Error al procesar segundo texto vertical en PRELOSA ALIGERADA 20 - 2 SENT '{texto}': {e}")
                 
-                print("Limpiando celdas G5 y G15 después de procesar la prelosa...")
-                try:
-                    # Limpiar G5 y relacionadas
-                    ws.range('G5').value = 0
+                # IMPORTANTE: Forzar recálculo y GUARDAR los valores calculados antes de cualquier limpieza
+                print("Forzando recálculo de Excel...")
+                ws.book.app.calculate()
+                time.sleep(0.1)
+                
+                # GUARDAR los valores calculados en variables locales
+                valores_calculados = {
+                    "k8": ws.range('K8').value,
+                    "k17": ws.range('K17').value,
+                    "k18": ws.range('K18').value
+                }
+                
+                print("VALORES FINALES CALCULADOS POR EXCEL (GUARDADOS):")
+                print(f"  Celda K8 = {valores_calculados['k8']}")
+                print(f"  Celda K17 = {valores_calculados['k17']}")
+                print(f"  Celda K18 = {valores_calculados['k18']}")
+                
+                # AHORA limpiar las celdas (esto no afectará los valores ya guardados)
+           
+                
+                # MODIFICAR las variables globales as_long, as_tra1, as_tra2 para que usen los valores guardados
+                # Esto es para que el código posterior use estos valores, no los recalculados
+                as_long = valores_calculados["k8"]
+                as_tra1 = 0.28  # Valor fijo para PRELOSA ALIGERADA 20 - 2 SENT
+                as_tra2 = valores_calculados["k18"]
+                
+                # Para seguridad, volvemos a imprimir los valores que se usarán
+                print("VALORES QUE SE USARÁN PARA EL BLOQUE (NO SE RECALCULARÁN):")
+                print(f"  AS_LONG: {as_long}")
+                print(f"  AS_TRA1: {as_tra1} (valor fijo)")
+                print(f"  AS_TRA2: {as_tra2}")
 
-                    # Limpiar G15 y relacionadas
-                    ws.range('G15').value = 0
- 
-                    
-                    print("Celdas G5 limpiadas correctamente")
-                except Exception as e:
-                    print(f"Error al limpiar celdas G5 y G15: {e}")
-                        # Para PRELOSA MACIZA
-# Aquí está la sección corregida para el procesamiento de textos horizontales
-# Para la sección de PRELOSA MACIZA, agregar esta limpieza al final
             elif tipo_prelosa == "PRELOSA MACIZA":
                 # Procesar textos horizontales
                 if len(textos_horizontal) > 0:
@@ -1259,55 +1313,6 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
             # Forzar cálculo y obtener resultados
             try:
                 # Actualizar Excel de manera más agresiva
-                ws.book.app.calculate()
-                
-                # Dar tiempo a Excel para calcular
-                time.sleep(0.1)
-                
-                # Intento 1: Intentar usar CalculateFull si está disponible
-                try:
-                    wb.api.CalculateFull()
-                except:
-                    pass
-                
-                try:
-                    # Guardar las fórmulas originales
-                    formula_k8 = ws.range('K8').formula
-                    formula_k17 = ws.range('K17').formula
-                    formula_k18 = ws.range('K18').formula
-                    
-                    print("Fórmulas originales preservadas:")
-                    print(f"  K8 fórmula: {formula_k8}")
-                    print(f"  K17 fórmula: {formula_k17}")
-                    print(f"  K18 fórmula: {formula_k18}")
-                    
-                    # Forzar recálculo sin modificar las celdas
-                    ws.range('A1').select()  # Seleccionar otra celda
-                    ws.book.app.calculate()  # Recalcular
-                    
-                    # Verificar si las fórmulas siguen intactas
-                    if ws.range('K8').formula != formula_k8 and formula_k8:
-                        print("Restaurando fórmula en K8...")
-                        ws.range('K8').formula = formula_k8
-                        
-                    if ws.range('K17').formula != formula_k17 and formula_k17:
-                        print("Restaurando fórmula en K17...")
-                        ws.range('K17').formula = formula_k17
-                        
-                    if ws.range('K18').formula != formula_k18 and formula_k18:
-                        print("Restaurando fórmula en K18...")
-                        ws.range('K18').formula = formula_k18
-                        
-                    # Recalcular nuevamente después de restaurar fórmulas
-                    ws.book.app.calculate()
-                except Exception as e:
-                    print(f"Error durante la preservación de fórmulas: {e}")
-                    pass
-                
-                # Dar más tiempo para los cálculos
-                time.sleep(0.1)
-                
-                print("Actualizando excel...")
                 
                 # Leer valores después de procesamiento pero antes de correcciones
                 print("\nVALORES DESPUÉS DE ACTUALIZAR EXCEL (ANTES DE CORRECCIONES):")
