@@ -723,105 +723,197 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
             print(f"  Valor K17 actual = {k17_actual}")
             print("-" * 40)
                         
-                        # Casos especiales para PRELOSA ALIGERADA 20
+            # Casos especiales para PRELOSA ALIGERADA 20
             if tipo_prelosa == "PRELOSA ALIGERADA 20":
-                # Usar el espaciamiento de los valores predeterminados
-                separacion_decimal = float(default_valores.get('PRELOSA ALIGERADA 20', {}).get('espaciamiento', 0.20)) * 100
+                print("----------------------------------------")
+                print("INICIANDO PROCESAMIENTO DE PRELOSA ALIGERADA 20")
+                print("----------------------------------------")
                 
-                # Caso 1: Si tenemos textos horizontales (prioridad)
-                if len(textos_horizontal) > 0:
-                    print(f"Procesando {len(textos_horizontal)} textos horizontales en PRELOSA ALIGERADA 20")
+                # Usar el espaciamiento de los valores predeterminados
+                espaciamiento_aligerada = float(default_valores.get('PRELOSA ALIGERADA 20', {}).get('espaciamiento', 0.605))
+                print(f"Usando espaciamiento predeterminado para PRELOSA ALIGERADA 20: {espaciamiento_aligerada}")
+                
+                # Imprimir todos los textos encontrados para depuración
+                print("TEXTOS ENCONTRADOS PARA DEPURACIÓN:")
+                print(f"Textos verticales ({len(textos_vertical)}): {textos_vertical}")
+                print(f"Textos horizontales ({len(textos_horizontal)}): {textos_horizontal}")
+                
+                # Combinar textos verticales y horizontales para procesar
+                # Primero los verticales y luego los horizontales (si hay)
+                textos_a_procesar = textos_vertical + textos_horizontal
+                print(f"Total textos a procesar (vertical + horizontal): {len(textos_a_procesar)}")
+                
+                # Procesar los textos (independientemente si son verticales u horizontales)
+                if len(textos_a_procesar) > 0:
+                    print(f"Procesando {len(textos_a_procesar)} textos en PRELOSA ALIGERADA 20")
                     
-                    # Procesar primer texto horizontal (G4, H4, J4)
-                    if len(textos_horizontal) >= 1:
-                        texto = textos_horizontal[0]
+                    # Procesar primer texto (G4, H4, J4)
+                    if len(textos_a_procesar) >= 1:
+                        texto = textos_a_procesar[0]
+                        print(f"Procesando primer texto: '{texto}'")
                         try:
-                            # Extraer diámetro del texto (ej: "1∅3/8"")
-                            diametro_match = re.search(r'∅([\d/]+)', texto)
+                            # Extraer cantidad (número antes de ∅)
+                            cantidad_match = re.search(r'^(\d+)∅', texto)
+                            if cantidad_match:
+                                cantidad = cantidad_match.group(1)
+                            else:
+                                cantidad = "1"  # Si no hay número antes de ∅, la cantidad es 1
+                            
+                            print(f"Cantidad extraída: {cantidad}")
+                            
+                            # Extraer diámetro del texto con manejo mejorado para mm
+                            if "mm" in texto:
+                                # Caso específico para milímetros
+                                diametro_match = re.search(r'∅(\d+)mm', texto)
+                                if diametro_match:
+                                    diametro = diametro_match.group(1)
+                                    diametro_con_comillas = f"{diametro}mm"
+                            else:
+                                # Caso para fraccionales con o sin comillas
+                                diametro_match = re.search(r'∅([\d/]+)', texto)
+                                if diametro_match:
+                                    diametro = diametro_match.group(1)
+                                    # Asegurarnos de añadir comillas si es necesario
+                                    if "\"" not in diametro and "/" in diametro:
+                                        diametro_con_comillas = f"{diametro}\""
+                                    else:
+                                        diametro_con_comillas = diametro
+                            
                             if diametro_match:
-                                diametro = diametro_match.group(1)
-                                # Asegurarnos de añadir comillas si es necesario (para 3/8")
-                                if "\"" not in diametro and "/" in diametro:
-                                    diametro_con_comillas = f"{diametro}\""
-                                else:
-                                    diametro_con_comillas = diametro
+                                print(f"Diámetro extraído: {diametro_con_comillas}")
                                 
-                                cantidad = "1"  # Por defecto
-                                # Usar separacion_decimal calculada desde default_valores
+                                cantidad = int(cantidad)  # Convertir a entero
+                                # Usar el valor predeterminado para el espaciamiento
+                                separacion_decimal = espaciamiento_aligerada
                                 
                                 # Escribir en Excel
-                                ws.range('G4').value = int(cantidad)
+                                print(f"Escribiendo en Excel: G4={cantidad}, H4={diametro_con_comillas}, J4={separacion_decimal}")
+                                ws.range('G4').value = cantidad
                                 ws.range('H4').value = diametro_con_comillas
                                 ws.range('J4').value = separacion_decimal
                                 
-                                print(f"Colocando en el excel primer texto: {cantidad} -> G4, {diametro_con_comillas} -> H4, {separacion_decimal} -> J4")
+                                print(f"Colocación en Excel exitosa para primer texto")
                             else:
-                                print(f"No se pudo extraer información del diámetro en el texto '{texto}'")
+                                print(f"ERROR: No se pudo extraer información del diámetro en el texto '{texto}'")
                         except Exception as e:
-                            print(f"Error al procesar primer texto horizontal en PRELOSA ALIGERADA 20 '{texto}': {e}")
+                            print(f"ERROR al procesar primer texto en PRELOSA ALIGERADA 20 '{texto}': {e}")
                     
-                    # Procesar segundo texto horizontal (G5, H5, J5) si existe
-                    if len(textos_horizontal) >= 2:
-                        texto = textos_horizontal[1]
+                    # Procesar segundo texto (G5, H5, J5) si existe
+                    if len(textos_a_procesar) >= 2:
+                        texto = textos_a_procesar[1]
+                        print(f"Procesando segundo texto: '{texto}'")
                         try:
-                            # Extraer diámetro del texto (ej: "1∅8mm")
-                            diametro_match = re.search(r'∅([\w/]+)', texto)
+                            # Extraer cantidad (número antes de ∅)
+                            cantidad_match = re.search(r'^(\d+)∅', texto)
+                            if cantidad_match:
+                                cantidad = cantidad_match.group(1)
+                            else:
+                                cantidad = "1"  # Si no hay número antes de ∅, la cantidad es 1
+                            
+                            print(f"Cantidad extraída: {cantidad}")
+                            
+                            # Extraer diámetro del texto con manejo mejorado para mm
+                            if "mm" in texto:
+                                # Caso específico para milímetros
+                                diametro_match = re.search(r'∅(\d+)mm', texto)
+                                if diametro_match:
+                                    diametro = diametro_match.group(1)
+                                    diametro_con_comillas = f"{diametro}mm"
+                            else:
+                                # Caso para fraccionales con o sin comillas
+                                diametro_match = re.search(r'∅([\d/]+)', texto)
+                                if diametro_match:
+                                    diametro = diametro_match.group(1)
+                                    # Asegurarnos de añadir comillas si es necesario
+                                    if "\"" not in diametro and "/" in diametro:
+                                        diametro_con_comillas = f"{diametro}\""
+                                    else:
+                                        diametro_con_comillas = diametro
+                            
                             if diametro_match:
-                                diametro = diametro_match.group(1)
-                                # Dejar el diámetro como está, normalmente "8mm"
-                                diametro_formateado = diametro
+                                print(f"Diámetro extraído: {diametro_con_comillas}")
                                 
-                                cantidad = "1"  # Por defecto
-                                # Usar separacion_decimal calculada desde default_valores
+                                cantidad = int(cantidad)  # Convertir a entero
+                                # Usar el valor predeterminado para el espaciamiento
+                                separacion_decimal = espaciamiento_aligerada
                                 
                                 # Escribir en Excel
-                                ws.range('G5').value = int(cantidad)
-                                ws.range('H5').value = diametro_formateado
+                                print(f"Escribiendo en Excel: G5={cantidad}, H5={diametro_con_comillas}, J5={separacion_decimal}")
+                                ws.range('G5').value = cantidad
+                                ws.range('H5').value = diametro_con_comillas
                                 ws.range('J5').value = separacion_decimal
                                 
-                                print(f"Colocando en el excel segundo texto: {cantidad} -> G5, {diametro_formateado} -> H5, {separacion_decimal} -> J5")
+                                print(f"Colocación en Excel exitosa para segundo texto")
                             else:
-                                print(f"No se pudo extraer información del diámetro en el texto '{texto}'")
+                                print(f"ERROR: No se pudo extraer información del diámetro en el texto '{texto}'")
                         except Exception as e:
-                            print(f"Error al procesar segundo texto horizontal en PRELOSA ALIGERADA 20 '{texto}': {e}")
+                            print(f"ERROR al procesar segundo texto en PRELOSA ALIGERADA 20 '{texto}': {e}")
+                else:
+                    print("ADVERTENCIA: No se encontraron textos (ni verticales ni horizontales) para PRELOSA ALIGERADA 20")
                 
-                # Caso 2: Si tenemos textos verticales pero no horizontales
-                elif len(textos_vertical) > 0:
-                    for i, texto in enumerate(textos_vertical):
-                        try:
-                            # Extraer diámetro del texto (ej: "1∅1/2"")
-                            diametro_match = re.search(r'∅([\d/]+)', texto)
-                            if diametro_match:
-                                diametro = diametro_match.group(1)
-                                diametro_con_comillas = f"{diametro}\""
-                                cantidad = "1"  # Por defecto
-                                
-                                # Usar separacion_decimal calculada desde default_valores
-                                
-                                # Escribir en Excel
-                                ws.range('G4').value = int(cantidad)
-                                ws.range('H4').value = diametro_con_comillas
-                                ws.range('J4').value = separacion_decimal
-                                
-                                print(f"Colocando en el excel para PRELOSA ALIGERADA 20: {cantidad} -> G4, {diametro_con_comillas} -> H4, {separacion_decimal} -> J4")
-                            else:
-                                print(f"No se pudo extraer información del diámetro en el texto '{texto}'")
-                        except Exception as e:
-                            print(f"Error al procesar texto vertical en PRELOSA ALIGERADA 20 '{texto}': {e}")
+                # Verificamos antes de recalcular los valores actuales
+                print("VALORES ANTES DE RECALCULAR:")
+                print(f"  Celda K8 = {ws.range('K8').value}")
+                print(f"  Celda K17 = {ws.range('K17').value}")
                 
-                print("Limpiando celdas G5 y G15 después de procesar la prelosa...")
-                try:
-                    # Limpiar G5 y relacionadas
-                    ws.range('G5').value = 0
-
-                    
-                    # Limpiar G15 y relacionadas
-                    ws.range('G15').value = 0
- 
-                    
-                    print("Celdas G5")
-                except Exception as e:
-                    print(f"Error al limpiar celdas G5 y G15: {e}")
+                # IMPORTANTE: Forzar recálculo y GUARDAR los valores calculados antes de cualquier limpieza
+                print("Forzando recálculo de Excel...")
+                ws.book.app.calculate()
+                time.sleep(0.1)
+                
+                # GUARDAR los valores calculados en variables locales
+                k8_valor = ws.range('K8').value
+                k17_valor = ws.range('K17').value
+                k18_valor = ws.range('K18').value
+                
+                print("VALORES FINALES CALCULADOS POR EXCEL (GUARDADOS):")
+                print(f"  Celda K8 = {k8_valor}")
+                print(f"  Celda K17 = {k17_valor}")
+                print(f"  Celda K18 = {k18_valor}")
+                
+                # MODIFICAR las variables globales as_long, as_tra1, as_tra2 para que usen los valores guardados
+                # Formatear correctamente el valor K8 (convertir de decimal a entero si es posible)
+                if k8_valor is not None:
+                    # Verificar si es un número
+                    try:
+                        # Multiplicar por 100 y redondear para evitar errores de punto flotante
+                        k8_int = round(float(k8_valor) * 100)
+                        # Convertir a entero si es posible (si termina en .0)
+                        if k8_int % 100 == 0:  # Si es un número entero
+                            k8_formateado = str(k8_int // 100)
+                        else:  # Si tiene decimales
+                            k8_formateado = str(k8_int / 100).rstrip('0').rstrip('.')
+                    except (ValueError, TypeError):
+                        k8_formateado = str(k8_valor)
+                else:
+                    k8_formateado = "20"  # Valor por defecto si K8 es None
+                
+                # Crear las cadenas finales para el bloque
+                as_long = f"1Ø3/8\"@.{k8_formateado}"
+                as_tra1 = "1Ø6 mm@.50"  # Valor fijo para PRELOSA ALIGERADA 20
+                as_tra2 = "1Ø8 mm@.50"  # Valor fijo para PRELOSA ALIGERADA 20
+                
+                # Guardar estos valores finales en variables globales que no se pueden modificar
+                # Esta es la parte crítica - asegurar que estos valores no cambien después
+                global as_long_final, as_tra1_final, as_tra2_final
+                as_long_final = as_long
+                as_tra1_final = as_tra1
+                as_tra2_final = as_tra2
+                
+                # Para seguridad, volvemos a imprimir los valores que se usarán
+                print("VALORES FINALES QUE SE USARÁN PARA EL BLOQUE (NO SE MODIFICARÁN):")
+                print(f"  AS_LONG: {as_long_final}")
+                print(f"  AS_TRA1: {as_tra1_final} (valor fijo)")
+                print(f"  AS_TRA2: {as_tra2_final} (valor fijo)")
+                
+                print("----------------------------------------")
+                print("PROCESAMIENTO DE PRELOSA ALIGERADA 20 FINALIZADO")
+                print("----------------------------------------")
+                
+                # IMPORTANTE: Asegurarnos de que estos valores se usen para el bloque
+                as_long = as_long_final
+                as_tra1 = as_tra1_final 
+                as_tra2 = as_tra2_final
 
                         # Casos especiales para PRELOSA ALIGERADA 20 - 2 SENT
             elif tipo_prelosa == "PRELOSA ALIGERADA 20 - 2 SENT":
@@ -1016,7 +1108,6 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 print(f"  AS_LONG: {as_long}")
                 print(f"  AS_TRA1: {as_tra1} (valor fijo)")
                 print(f"  AS_TRA2: {as_tra2}")
-
             elif tipo_prelosa == "PRELOSA MACIZA":
                 # Procesar textos horizontales
                 if len(textos_horizontal) > 0:
