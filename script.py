@@ -63,6 +63,9 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos):
 
 # Función para obtener polilíneas dentro de una polilínea principal
 def obtener_polilineas_dentro_de_polilinea(polilinea_principal, polilineas_anidadas):
+    """
+    Obtiene las polilíneas que están dentro o intersectan con una polilínea principal.
+    """
     # Capas válidas de acero (case-insensitive)
     capas_acero_validas = [
         "ACERO HORIZONTAL", 
@@ -71,7 +74,8 @@ def obtener_polilineas_dentro_de_polilinea(polilinea_principal, polilineas_anida
         "BD-ACERO VERTICAL",
         "ACERO", 
         "REFUERZO", 
-        "ARMADURA"
+        "ARMADURA",
+        "ACERO ADICIONAL"  # Añadido ACERO ADICIONAL a la lista de capas válidas
     ]
 
     vertices_principal = [(p[0], p[1]) for p in polilinea_principal]
@@ -82,6 +86,7 @@ def obtener_polilineas_dentro_de_polilinea(polilinea_principal, polilineas_anida
     capas_encontradas = set()
     for polilinea in polilineas_anidadas:
         capas_encontradas.add(polilinea.dxf.layer)
+            
     
     print(f"Capas de polilíneas encontradas: {capas_encontradas}")
 
@@ -268,7 +273,6 @@ def calcular_orientacion_prelosa(vertices):
         print(f"Error al calcular la orientación: {e}")
         return 0.0
 
-# Función para calcular el espaciamiento de acero
 def insertar_bloque_acero(msp, definicion_bloque, centro, as_long, as_tra1, as_tra2=None):
     """
     Inserta un bloque de acero en el centro de la prelosa con los valores calculados.
@@ -490,29 +494,31 @@ def eliminar_entidades_por_capa(doc, capas_a_eliminar):
 
 # Eliminar polilíneas de acero
 
-def formatear_valor_espaciamiento(valor_decimal):
+def formatear_valor_espaciamiento(valor):
     """
-    Formatea valores de espaciamiento según la regla:
-    - Si termina en 00 (como 200, 100), se recorta a 20, 10
-    - Si no, se mantiene el valor completo (como 175)
+    Formatea un valor decimal para mostrarlo correctamente en el bloque.
+    Si el valor termina en 0, se elimina el último dígito.
     
     Args:
-        valor_decimal: Valor decimal a formatear (ej: 0.200, 0.175)
+        valor (float): Valor decimal (por ejemplo 0.200, 0.350, 0.175)
         
     Returns:
-        str: Valor formateado según las reglas
+        str: Valor formateado (por ejemplo "20", "35", "175")
     """
-    # Convertir a entero multiplicado por 1000 y redondeado
-    valor_entero = int(round(valor_decimal, 3) * 1000)
+    if valor is None:
+        return "20"  # Valor por defecto
     
-    # Verificar si termina en 00 (divisible por 100)
-    if valor_entero % 100 == 0:
-        # Recortar el valor (200 -> 20, 100 -> 10)
-        return str(valor_entero // 10)
-    else:
-        # Mantener el valor completo con 3 dígitos
-        return f"{valor_entero:03d}"
-
+    # Multiplicar por 1000 y redondear para evitar errores de punto flotante
+    valor_entero = round(float(valor) * 1000)
+    
+    # Convertir a string
+    valor_str = str(valor_entero)
+    
+    # Si termina en 0, eliminar el último dígito
+    if valor_str.endswith("0"):
+        valor_str = valor_str[:-1]
+    
+    return valor_str
 
 
 # Función principal modificada para usar bloques en lugar de textos
@@ -618,6 +624,9 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         total_prelosas = 0
         total_bloques = 0
         
+# Print all layer names in the DXF file
+
+        
         # Función para calcular la orientación de la prelosa
         def calcular_orientacion_prelosa(vertices):
             """
@@ -692,6 +701,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
             # Variables para almacenar textos por tipo de acero
             textos_horizontal = []
             textos_vertical = []
+            textos_adicionales = []
             
             # Procesar polilíneas de acero
             for polilinea_anidada in polilineas_dentro:
@@ -710,6 +720,10 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     for texto in textos_dentro:
                         print(f"Texto encontrado en ACERO VERTICAL: {texto}")
                         textos_vertical.append(texto)
+                elif "ADICIONAL" in tipo_acero:
+                    for texto in textos_dentro:
+                        print(f"Texto encontrado en ACERO ADICIONAL: {texto}")
+                        textos_adicionales.append(texto)
             
             # Procesar datos en Excel
             print("Actualizando excel...")
@@ -749,6 +763,8 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     
                     # Procesar primer texto (G4, H4, J4)
                     if len(textos_a_procesar) >= 1:
+                        #limpiar celda g5
+                        ws.range('G5').value = 0
                         texto = textos_a_procesar[0]
                         print(f"Procesando primer texto: '{texto}'")
                         try:
@@ -1297,6 +1313,18 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         except Exception as e:
                             print(f"Error al procesar segundo texto vertical en PRELOSA MACIZA '{texto}': {e}")
                 
+# Verificar si hay polilíneas con "ACERO ADICIONAL"
+                acero_adicional_encontrado = False
+                for polilinea_anidada in polilineas_dentro:
+                    if "ACERO ADICIONAL" in polilinea_anidada.dxf.layer.upper():
+                        acero_adicional_encontrado = True
+                        print("\n" + "!" * 80)
+                        print("!! ACERO ADICIONAL ENCONTRADO !!")
+                        print(f"!! Se encontró una polilínea con ACERO ADICIONAL dentro de la PRELOSA MACIZA número {idx + 1} !!")
+                        print("!! Este es un tipo de prelosa diferente que requiere un procesamiento especial !!")
+                        print("!" * 80 + "\n")
+                        # Aquí se puede agregar lógica adicional si es necesario para procesar "ACERO ADICIONAL"
+
                 # Después de actualizar los valores en J, forzar recálculo
                 print("Limpiando celdas G5 y G15 después de procesar la prelosa...")
                 try:
@@ -1311,9 +1339,13 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     print("Celdas G5 y G15 limpiadas correctamente")
                 except Exception as e:
                     print(f"Error al limpiar celdas G5 y G15: {e}")
+                
+                if len(textos_adicionales) > 0:
+                    print("ADVERTENCIA: Se encontraron textos adicionales en la prelosa, pero no se procesarán")
+
             else:
                 # Procesar acero horizontal (G4, H4, J4)
-                for i, texto in enumerate(textos_horizontal):
+                for i, texto in textos_horizontal:
                     try:
                         # Extraer información del texto
                         match = re.match(r'∅(\d+\/\d+)\"@(\d+)', texto)
@@ -1358,7 +1390,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         print(f"Error al procesar texto horizontal '{texto}': {e}")
                 
                 # Procesar acero vertical (G14, H14, J14)
-                for i, texto in enumerate(textos_vertical):
+                for i, texto in textos_vertical:
                     try:
                         # Extraer información del texto
                         match = re.match(r'∅(\d+\/\d+)\"@(\d+)', texto)

@@ -1,0 +1,16 @@
+tkinter
+openpyxl
+pyautocad
+pywin32
+numpy
+pandas
+matplotlib
+pytest
+python-dxf
+ezdxf
+cadquery
+pillow
+scipy
+plotly
+traceback
+importlib
