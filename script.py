@@ -68,14 +68,12 @@ def obtener_polilineas_dentro_de_polilinea(polilinea_principal, polilineas_anida
     """
     # Capas válidas de acero (case-insensitive)
     capas_acero_validas = [
-        "ACERO HORIZONTAL", 
-        "ACERO VERTICAL", 
-        "BD-ACERO HORIZONTAL", 
-        "BD-ACERO VERTICAL",
-        "ACERO", 
-        "REFUERZO", 
-        "ARMADURA",
-        "ACERO ADICIONAL"  # Añadido ACERO ADICIONAL a la lista de capas válidas
+        "ACERO LONGITUDINAL", 
+        "ACERO TRANSVERSAL", 
+        "BD-ACERO LONGITUDINAL", 
+        "BD-ACERO TRANSVERSAL",
+        "ACERO LONG ADI",
+        "ACERO TRA ADI"
     ]
 
     vertices_principal = [(p[0], p[1]) for p in polilinea_principal]
@@ -222,56 +220,56 @@ def obtener_definicion_bloque(bloque_original):
         }
 
 # Función para calcular el espaciamiento de acero
-def calcular_orientacion_prelosa(vertices):
-    """
-    Calcula la orientación de la prelosa analizando la longitud de sus lados.
-    Devuelve el ángulo de rotación en grados para alinear el bloque con el lado más corto
-    sin que el texto se invierta o aparezca al revés.
-    """
-    try:
-        import math
+# def calcular_orientacion_prelosa(vertices):
+#     """
+#     Calcula la orientación de la prelosa analizando la longitud de sus lados.
+#     Devuelve el ángulo de rotación en grados para alinear el bloque con el lado más corto
+#     sin que el texto se invierta o aparezca al revés.
+#     """
+#     try:
+#         import math
         
-        # Si la prelosa no tiene al menos 3 vértices, devolver rotación por defecto
-        if len(vertices) < 3:
-            return 0.0
+#         # Si la prelosa no tiene al menos 3 vértices, devolver rotación por defecto
+#         if len(vertices) < 3:
+#             return 0.0
             
-        # Calcular la longitud de los lados
-        lados = []
-        for i in range(len(vertices)):
-            x1, y1 = vertices[i]
-            x2, y2 = vertices[(i + 1) % len(vertices)]
+#         # Calcular la longitud de los lados
+#         lados = []
+#         for i in range(len(vertices)):
+#             x1, y1 = vertices[i]
+#             x2, y2 = vertices[(i + 1) % len(vertices)]
             
-            # Calcular longitud del lado
-            longitud = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+#             # Calcular longitud del lado
+#             longitud = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
             
-            # Calcular ángulo del lado (en radianes)
-            angulo = math.atan2(y2 - y1, x2 - x1)
+#             # Calcular ángulo del lado (en radianes)
+#             angulo = math.atan2(y2 - y1, x2 - x1)
             
-            lados.append((longitud, angulo))
+#             lados.append((longitud, angulo))
         
-        # Ordenar los lados por longitud (ascendente)
-        lados_ordenados = sorted(lados, key=lambda x: x[0])
+#         # Ordenar los lados por longitud (ascendente)
+#         lados_ordenados = sorted(lados, key=lambda x: x[0])
         
-        # Obtener el ángulo del lado más corto (en radianes)
-        angulo_lado_corto = lados_ordenados[0][1]
+#         # Obtener el ángulo del lado más corto (en radianes)
+#         angulo_lado_corto = lados_ordenados[0][1]
         
-        # Convertir a grados
-        angulo_grados = math.degrees(angulo_lado_corto)
+#         # Convertir a grados
+#         angulo_grados = math.degrees(angulo_lado_corto)
         
-        # Forzar el ángulo a estar entre 0 y 180 grados
-        # Esto evita la inversión del texto en el bloque
-        if angulo_grados < 0:
-            angulo_grados += 180
-        elif angulo_grados > 180:
-            angulo_grados -= 180
+#         # Forzar el ángulo a estar entre 0 y 180 grados
+#         # Esto evita la inversión del texto en el bloque
+#         if angulo_grados < 0:
+#             angulo_grados += 180
+#         elif angulo_grados > 180:
+#             angulo_grados -= 180
             
-        print(f"Orientación final: {angulo_grados:.2f}° (texto correctamente orientado)")
+#         print(f"Orientación final: {angulo_grados:.2f}° (texto correctamente orientado)")
         
-        return angulo_grados
+#         return angulo_grados
         
-    except Exception as e:
-        print(f"Error al calcular la orientación: {e}")
-        return 0.0
+#     except Exception as e:
+#         print(f"Error al calcular la orientación: {e}")
+#         return 0.0
 
 def insertar_bloque_acero(msp, definicion_bloque, centro, as_long, as_tra1, as_tra2=None):
     """
@@ -492,7 +490,7 @@ def eliminar_entidades_por_capa(doc, capas_a_eliminar):
 # Modificar el código principal para llamar a esta función justo antes de guardar el archivo DXF
 # Añadir justo antes de doc.saveas(output_dxf_path):
 
-# Eliminar polilíneas de acero
+
 
 def formatear_valor_espaciamiento(valor):
     """
@@ -615,9 +613,9 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         polilineas_aligeradas = [entity for entity in msp if entity.dxftype() == 'LWPOLYLINE' and entity.dxf.layer == "PRELOSA ALIGERADA 20"]
         polilineas_aligeradas_2sent = [entity for entity in msp if entity.dxftype() == 'LWPOLYLINE' and entity.dxf.layer == "PRELOSA ALIGERADA 20 - 2 SENT"]
         polilineas_acero = [entity for entity in msp if entity.dxftype() == 'LWPOLYLINE' and 
-                   entity.dxf.layer in ["ACERO HORIZONTAL", "ACERO VERTICAL", 
-                                        "BD-ACERO HORIZONTAL", "BD-ACERO VERTICAL",
-                                        "ACERO", "REFUERZO", "ARMADURA"]]
+             entity.dxf.layer in ["ACERO LONGITUDINAL", "ACERO TRANSVERSAL", "ACERO LONG ADI", "ACERO TRA ADI",
+                                  "BD-ACERO LONGITUDINAL", "BD-ACERO TRANSVERSAL",
+                                  "ACERO", "REFUERZO", "ARMADURA"]]
         textos = [entity for entity in msp if entity.dxftype() in ['TEXT', 'MTEXT']]
         
         # Contadores para estadísticas
@@ -626,12 +624,10 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         
 # Print all layer names in the DXF file
 
-        
-        # Función para calcular la orientación de la prelosa
         def calcular_orientacion_prelosa(vertices):
             """
-            Calcula la orientación de la prelosa analizando la longitud de sus lados.
-            Devuelve el ángulo de rotación en grados para alinear el bloque con el lado más corto.
+            Calcula la orientación de la prelosa para que el bloque (línea azul) 
+            se alinee con el lado más ESTRECHO de la prelosa.
             
             Args:
                 vertices: Lista de puntos (x, y) que forman la polilínea de la prelosa
@@ -641,50 +637,40 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
             """
             try:
                 import math
+                import numpy as np
                 
-                # Si la prelosa no tiene al menos 3 vértices, devolver rotación por defecto
+                # Si la prelosa no tiene suficientes vértices, usar rotación por defecto
                 if len(vertices) < 3:
                     return 0.0
-                    
-                # Calcular la longitud de los lados
-                lados = []
-                for i in range(len(vertices)):
-                    x1, y1 = vertices[i]
-                    x2, y2 = vertices[(i + 1) % len(vertices)]  # Cierra el circuito al último punto
-                    
-                    # Calcular longitud del lado
-                    longitud = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-                    
-                    # Calcular ángulo del lado (en radianes)
-                    angulo = math.atan2(y2 - y1, x2 - x1)
-                    
-                    lados.append((longitud, angulo))
                 
-                # Ordenar los lados por longitud (ascendente)
-                lados_ordenados = sorted(lados, key=lambda x: x[0])
+                # Convertir vértices a array NumPy
+                vertices_array = np.array(vertices)
                 
-                # Obtener el ángulo del lado más corto (en radianes)
-                angulo_lado_corto = lados_ordenados[0][1]
+                # Calcular caja contenedora
+                min_x = np.min(vertices_array[:, 0])
+                max_x = np.max(vertices_array[:, 0])
+                min_y = np.min(vertices_array[:, 1])
+                max_y = np.max(vertices_array[:, 1])
                 
-                # Convertir a grados
-                angulo_grados = math.degrees(angulo_lado_corto)
+                ancho = max_x - min_x
+                alto = max_y - min_y
                 
-                # Normalizar el ángulo para que esté en el rango 0-360
-                if angulo_grados < 0:
-                    angulo_grados += 360
-                
-                # Usar directamente el ángulo del lado más corto para que el acero azul 
-                # quede alineado con el lado más estrecho
-                angulo_final = angulo_grados
-                
-                print(f"Orientación corregida: {angulo_final:.2f}° (acero azul alineado con lado más estrecho)")
+                # CAMBIO CLAVE: Orientar para que la línea azul apunte al lado más ESTRECHO
+                if ancho < alto:  # Si el ancho es menor que el alto
+                    # Prelosa más alta que ancha -> línea azul horizontal (0°)
+                    angulo_final = 0.0
+                    print(f"Prelosa vertical (más alta que ancha). Orientando bloque horizontalmente: {angulo_final}°")
+                else:
+                    # Prelosa más ancha que alta -> línea azul vertical (90°)
+                    angulo_final = 90.0
+                    print(f"Prelosa horizontal (más ancha que alta). Orientando bloque verticalmente: {angulo_final}°")
                 
                 return angulo_final
                 
             except Exception as e:
                 print(f"Error al calcular la orientación: {e}")
+                traceback.print_exc()
                 return 0.0  # Valor por defecto en caso de error
-        
         # FUNCIÓN AUXILIAR: Procesa una prelosa (se aplica a todos los tipos)
         def procesar_prelosa(polilinea, tipo_prelosa, idx):
             nonlocal total_prelosas, total_bloques
@@ -699,9 +685,11 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
             print(f"Polilíneas dentro encontradas: {len(polilineas_dentro)}")
             
             # Variables para almacenar textos por tipo de acero
-            textos_horizontal = []
-            textos_vertical = []
+            textos_longitudinal = []
+            textos_transversal = []
             textos_adicionales = []
+            textos_long_adi = []   # Nuevo
+            textos_tra_adi = []   # Nuevo
             
             # Procesar polilíneas de acero
             for polilinea_anidada in polilineas_dentro:
@@ -712,14 +700,22 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 
                 # Clasificar textos según el tipo de acero
                 tipo_acero = polilinea_anidada.dxf.layer.upper()
-                if "HORIZONTAL" in tipo_acero:
+                if "LONGITUDINAL" in tipo_acero:
                     for texto in textos_dentro:
-                        print(f"Texto encontrado en ACERO HORIZONTAL: {texto}")
-                        textos_horizontal.append(texto)
-                elif "VERTICAL" in tipo_acero:
+                        print(f"Texto encontrado en ACERO LONGITUDINAL: {texto}")
+                        textos_longitudinal.append(texto)
+                elif "TRANSVERSAL" in tipo_acero:
                     for texto in textos_dentro:
-                        print(f"Texto encontrado en ACERO VERTICAL: {texto}")
-                        textos_vertical.append(texto)
+                        print(f"Texto encontrado en ACERO TRANSVERSAL: {texto}")
+                        textos_transversal.append(texto)
+                elif "ACERO LONG ADI" in tipo_acero:
+                    for texto in textos_dentro:
+                        print(f"Texto encontrado en ACERO LONG ADI: {texto}")
+                        textos_long_adi.append(texto)
+                elif "ACERO TRA ADI" in tipo_acero:
+                    for texto in textos_dentro:
+                        print(f"Texto encontrado en ACERO TRA ADI: {texto}")
+                        textos_tra_adi.append(texto)
                 elif "ADICIONAL" in tipo_acero:
                     for texto in textos_dentro:
                         print(f"Texto encontrado en ACERO ADICIONAL: {texto}")
@@ -749,12 +745,12 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 
                 # Imprimir todos los textos encontrados para depuración
                 print("TEXTOS ENCONTRADOS PARA DEPURACIÓN:")
-                print(f"Textos verticales ({len(textos_vertical)}): {textos_vertical}")
-                print(f"Textos horizontales ({len(textos_horizontal)}): {textos_horizontal}")
+                print(f"Textos transversales ({len(textos_transversal)}): {textos_transversal}")
+                print(f"Textos longitudinales ({len(textos_longitudinal)}): {textos_longitudinal}")
                 
                 # Combinar textos verticales y horizontales para procesar
                 # Primero los verticales y luego los horizontales (si hay)
-                textos_a_procesar = textos_vertical + textos_horizontal
+                textos_a_procesar = textos_transversal + textos_longitudinal
                 print(f"Total textos a procesar (vertical + horizontal): {len(textos_a_procesar)}")
                 
                 # Procesar los textos (independientemente si son verticales u horizontales)
@@ -938,12 +934,12 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 print(f"Usando espaciamiento predeterminado para PRELOSA ALIGERADA 20 - 2 SENT: {dist_aligerada2sent}")
                 
                 # Caso 1: Si tenemos textos horizontales
-                if len(textos_horizontal) > 0:
-                    print(f"Procesando {len(textos_horizontal)} textos horizontales en PRELOSA ALIGERADA 20 - 2 SENT")
+                if len(textos_longitudinal) > 0:
+                    print(f"Procesando {len(textos_longitudinal)} textos horizontales en PRELOSA ALIGERADA 20 - 2 SENT")
                     
                     # Procesar primer texto horizontal (G4, H4, J4)
-                    if len(textos_horizontal) >= 1:
-                        texto = textos_horizontal[0]
+                    if len(textos_longitudinal) >= 1:
+                        texto = textos_longitudinal[0]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -979,8 +975,8 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             print(f"Error al procesar primer texto horizontal en PRELOSA ALIGERADA 20 - 2 SENT '{texto}': {e}")
                     
                     # Procesar segundo texto horizontal (G5, H5, J5) si existe
-                    if len(textos_horizontal) >= 2:
-                        texto = textos_horizontal[1]
+                    if len(textos_longitudinal) >= 2:
+                        texto = textos_longitudinal[1]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -1016,12 +1012,12 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             print(f"Error al procesar segundo texto horizontal en PRELOSA ALIGERADA 20 - 2 SENT '{texto}': {e}")
                 
                 # Caso 2: Si tenemos textos verticales
-                if len(textos_vertical) > 0:
-                    print(f"Procesando {len(textos_vertical)} textos verticales en PRELOSA ALIGERADA 20 - 2 SENT")
+                if len(textos_transversal) > 0:
+                    print(f"Procesando {len(textos_transversal)} textos verticales en PRELOSA ALIGERADA 20 - 2 SENT")
                     
                     # Procesar primer texto vertical (G14, H14, J14)
-                    if len(textos_vertical) >= 1:
-                        texto = textos_vertical[0]
+                    if len(textos_transversal) >= 1:
+                        texto = textos_transversal[0]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -1057,8 +1053,8 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             print(f"Error al procesar primer texto vertical en PRELOSA ALIGERADA 20 - 2 SENT '{texto}': {e}")
                     
                     # Procesar segundo texto vertical (G15, H15, J15) si existe
-                    if len(textos_vertical) >= 2:
-                        texto = textos_vertical[1]
+                    if len(textos_transversal) >= 2:
+                        texto = textos_transversal[1]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -1126,12 +1122,12 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 print(f"  AS_TRA2: {as_tra2}")
             elif tipo_prelosa == "PRELOSA MACIZA":
                 # Procesar textos horizontales
-                if len(textos_horizontal) > 0:
-                    print(f"Procesando {len(textos_horizontal)} textos horizontales en PRELOSA MACIZA")
+                if len(textos_longitudinal) > 0:
+                    print(f"Procesando {len(textos_longitudinal)} textos longitudinal en PRELOSA MACIZA")
                     
                     # Procesar primer texto horizontal (G4, H4, J4)
-                    if len(textos_horizontal) >= 1:
-                        texto = textos_horizontal[0]
+                    if len(textos_longitudinal) >= 1:
+                        texto = textos_longitudinal[0]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -1175,8 +1171,8 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             print(f"Error al procesar primer texto horizontal en PRELOSA MACIZA '{texto}': {e}")
                     
                     # Procesar segundo texto horizontal (G5, H5, J5) si existe
-                    if len(textos_horizontal) >= 2:
-                        texto = textos_horizontal[1]
+                    if len(textos_longitudinal) >= 2:
+                        texto = textos_longitudinal[1]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -1220,12 +1216,12 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             print(f"Error al procesar segundo texto horizontal en PRELOSA MACIZA '{texto}': {e}")
                 
                 # Procesar textos verticales
-                if len(textos_vertical) > 0:
-                    print(f"Procesando {len(textos_vertical)} textos verticales en PRELOSA MACIZA")
+                if len(textos_transversal) > 0:
+                    print(f"Procesando {len(textos_transversal)} textos verticales en PRELOSA MACIZA")
                     
                     # Procesar primer texto vertical (G14, H14, J14)
-                    if len(textos_vertical) >= 1:
-                        texto = textos_vertical[0]
+                    if len(textos_transversal) >= 1:
+                        texto = textos_transversal[0]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -1269,8 +1265,8 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             print(f"Error al procesar primer texto vertical en PRELOSA MACIZA '{texto}': {e}")
                     
                     # Procesar segundo texto vertical (G15, H15, J15) si existe
-                    if len(textos_vertical) >= 2:
-                        texto = textos_vertical[1]
+                    if len(textos_transversal) >= 2:
+                        texto = textos_transversal[1]
                         try:
                             # Extraer cantidad (número antes de ∅)
                             cantidad_match = re.search(r'^(\d+)∅', texto)
@@ -1313,39 +1309,184 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         except Exception as e:
                             print(f"Error al procesar segundo texto vertical en PRELOSA MACIZA '{texto}': {e}")
                 
-# Verificar si hay polilíneas con "ACERO ADICIONAL"
-                acero_adicional_encontrado = False
-                for polilinea_anidada in polilineas_dentro:
-                    if "ACERO ADICIONAL" in polilinea_anidada.dxf.layer.upper():
-                        acero_adicional_encontrado = True
-                        print("\n" + "!" * 80)
-                        print("!! ACERO ADICIONAL ENCONTRADO !!")
-                        print(f"!! Se encontró una polilínea con ACERO ADICIONAL dentro de la PRELOSA MACIZA número {idx + 1} !!")
-                        print("!! Este es un tipo de prelosa diferente que requiere un procesamiento especial !!")
-                        print("!" * 80 + "\n")
-                        # Aquí se puede agregar lógica adicional si es necesario para procesar "ACERO ADICIONAL"
+
+                if len(textos_long_adi) > 0:
+                    print("=" * 60)
+                    print(f"PROCESANDO {len(textos_long_adi)} TEXTOS LONG ADI EN PRELOSA MACIZA ESPECIAL")
+                    print("=" * 60)
+                    
+                    # Obtener el espaciamiento por defecto de los valores de tkinter
+                    espaciamiento_macizas_adi = float(default_valores.get('PRELOSA MACIZA', {}).get('espaciamiento', 0.20))
+                    print(f"Espaciamiento predeterminado para PRELOSA MACIZA ADI: {espaciamiento_macizas_adi}")
+
+                    # Analizar el primer texto para ver si contiene información de espaciamiento
+                    espaciamiento_primera_fila = espaciamiento_macizas_adi  # Valor por defecto
+                    print(f"Inicializando espaciamiento primera fila con valor predeterminado: {espaciamiento_primera_fila}")
+
+                    if len(textos_long_adi) > 0:
+                        primer_texto = textos_long_adi[0]
+                        print(f"Analizando primer texto para extraer espaciamiento: '{primer_texto}'")
+                        
+                        # Extraer espaciamiento del primer texto si existe
+                        espaciamiento_match = re.search(r'@(\d+)', primer_texto)
+                        if espaciamiento_match:
+                            separacion = espaciamiento_match.group(1)
+                            # Convertir a formato decimal (ej: 40 -> 0.40)
+                            espaciamiento_primera_fila = float(f"0.{separacion}")
+                            print(f"Espaciamiento encontrado en primer texto: @{separacion} -> {espaciamiento_primera_fila}")
+                        else:
+                            print(f"No se encontró espaciamiento en primer texto, usando valor predeterminado: {espaciamiento_macizas_adi}")
+
+                    print("\nCOLOCANDO VALORES EN PRIMERA FILA (G4, H4, J4):")
+                    print(f"  - Celda G4 = 1")
+                    print(f"  - Celda H4 = 3/8\"")
+                    print(f"  - Celda J4 = {espaciamiento_macizas_adi}")
+                    
+                    # Colocar los valores en la primera fila
+                    ws.range('G4').value = 1
+                    ws.range('H4').value = "3/8\""
+                    ws.range('J4').value = espaciamiento_macizas_adi
+                    
+                    print(f"Valores default colocados exitosamente en primera fila")
+                    
+                    # Procesar los textos de acero long adi
+                    datos_textos = []
+                    print("\nPROCESANDO TEXTOS INDIVIDUALES DE ACERO LONG ADI:")
+                    
+                    for i, texto in enumerate(textos_long_adi):
+                        print("-" * 50)
+                        print(f"TEXTO #{i+1}: '{texto}'")
+                        try:
+                            # Extraer cantidad (número antes de ∅, si no hay se asume 1)
+                            cantidad_match = re.search(r'^(\d+)∅', texto)
+                            if cantidad_match:
+                                cantidad = cantidad_match.group(1)
+                                print(f"  ✓ Cantidad extraída del texto: {cantidad}")
+                            else:
+                                cantidad = "1"
+                                print(f"  ✓ No se encontró cantidad explícita, asumiendo: {cantidad}")
+                            
+                            # Extraer diámetro del texto (ej: "3/8"")
+                            diametro_match = re.search(r'∅([\d/]+)', texto)
+                            if diametro_match:
+                                diametro = diametro_match.group(1)
+                                # Asegurarnos de añadir comillas si es necesario
+                                if "\"" not in diametro and "/" in diametro:
+                                    diametro_con_comillas = f"{diametro}\""
+                                    print(f"  ✓ Diámetro extraído: {diametro} -> añadiendo comillas: {diametro_con_comillas}")
+                                else:
+                                    diametro_con_comillas = diametro
+                                    print(f"  ✓ Diámetro extraído (ya con formato correcto): {diametro_con_comillas}")
+                                
+                                # Extraer espaciamiento del texto
+                                espaciamiento_match = re.search(r'@(\d+)', texto)
+                                if espaciamiento_match:
+                                    separacion = espaciamiento_match.group(1)
+                                    # Convertir a formato decimal (ej: 40 -> 0.40)
+                                    separacion_decimal = float(f"0.{separacion}")
+                                    print(f"  ✓ Espaciamiento extraído: @{separacion} -> {separacion_decimal}")
+                                else:
+                                    # Si no hay espaciamiento, usar el valor predeterminado
+                                    separacion_decimal = float(espaciamiento_macizas_adi)
+                                    print(f"  ✓ No se encontró espaciamiento en texto, usando valor predeterminado: {espaciamiento_macizas_adi}")
+                                
+                                # Guardar los datos procesados
+                                datos_textos.append([int(cantidad), diametro_con_comillas, separacion_decimal])
+                                print(f"  ✓ DATOS PROCESADOS Y GUARDADOS: cantidad={cantidad}, diámetro={diametro_con_comillas}, separación={separacion_decimal}")
+                            else:
+                                print(f"  ✗ ERROR: No se pudo extraer información del diámetro en el texto '{texto}'")
+                        except Exception as e:
+                            print(f"  ✗ ERROR al procesar texto: {e}")
+                            traceback.print_exc()
+                    
+                    print("\nCOLOCANDO VALORES EN FILAS ADICIONALES:")
+                    # Colocar los valores extraídos en las filas adicionales (G5, H5, J5, etc.)
+                    for i, datos in enumerate(datos_textos):
+                        fila = 5 + i  # Comienza en fila 5
+                        cantidad, diametro, separacion = datos
+                        
+                        print(f"FILA #{i+1} (G{fila}, H{fila}, J{fila}):")
+                        print(f"  - Celda G{fila} = {cantidad}")
+                        print(f"  - Celda H{fila} = {diametro}")
+                        print(f"  - Celda J{fila} = {separacion}")
+                        
+                        ws.range(f'G{fila}').value = cantidad
+                        ws.range(f'H{fila}').value = diametro
+                        ws.range(f'J{fila}').value = separacion
+                        
+                        print(f"  ✓ Valores colocados exitosamente en fila {fila}")
+                    
+                    # IMPORTANTE: Forzar recálculo y GUARDAR los valores calculados
+                    print("\nFORZANDO RECÁLCULO DE EXCEL...")
+                    ws.book.app.calculate()
+                    time.sleep(0.1)
+                    
+                    # GUARDAR el valor K8 calculado
+                    k8_valor = ws.range('K8').value
+                    print(f"RESULTADO CALCULADO EN EXCEL:")
+                    print(f"  ★ Celda K8 = {k8_valor}")
+                    
+                    # Formatear valor para el bloque
+                    k8_formateado = formatear_valor_espaciamiento(k8_valor)
+                    as_long_texto = f"1Ø3/8\"@.{k8_formateado}"
+                    as_tra1_texto = "1Ø6 mm@.28"  # Valor fijo para prelosas macizas
+                    
+                    print("\nVALORES FINALES FORMATEADOS PARA BLOQUE:")
+                    print(f"  ★ AS_LONG: {as_long_texto} (de K8={k8_valor} -> formato .{k8_formateado})")
+                    print(f"  ★ AS_TRA1: {as_tra1_texto} (valor fijo para prelosas macizas)")
+                    print("=" * 60)
+#
+                if len(textos_longitudinal) == 0 and len(textos_transversal) == 0 and len(textos_long_adi) == 0 and len(textos_tra_adi) == 0:
+                    print("=" * 60)
+                    print("PRELOSA MACIZA SIN NINGÚN TIPO DE ACERO DETECTADO")
+                    print("=" * 60)
+                    
+                    # Obtener el espaciamiento por defecto de los valores de tkinter
+                    espaciamiento_macizas_adi = float(default_valores.get('PRELOSA MACIZA', {}).get('espaciamiento', 0.20))
+                    print(f"Usando espaciamiento predeterminado del tkinter: {espaciamiento_macizas_adi}")
+                    
+                    print("\nCOLOCANDO VALORES POR DEFECTO EN EXCEL:")
+                    print(f"  - Celda G4 = 1")
+                    print(f"  - Celda H4 = 3/8\"")
+                    print(f"  - Celda J4 = {espaciamiento_macizas_adi}")
+                    
+                    # Colocar valores por defecto en Excel
+                    ws.range('G4').value = 1
+                    ws.range('H4').value = "3/8\""
+                    ws.range('J4').value = espaciamiento_macizas_adi
+                    
+                    # Limpiar otras celdas para evitar interferencias
+                    ws.range('G5').value = 0
+
+                    ws.range('G15').value = 0
+                    
+                    # Forzar recálculo
+                    print("\nFORZANDO RECÁLCULO DE EXCEL...")
+                    ws.book.app.calculate()
+                    time.sleep(0.1)
+                    
+                    # Guardar resultado para el bloque
+                    k8_valor = ws.range('K8').value
+                    print(f"RESULTADO CALCULADO EN EXCEL:")
+                    print(f"  ★ Celda K8 = {k8_valor}")
+                    
+                    # Formatear para bloque
+                    as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(k8_valor)}"
+                    as_tra1_texto = "1Ø6 mm@.28"  # Valor fijo para prelosas macizas
+                    as_tra2_texto = None
+                    
+                    print("\nVALORES FINALES PARA BLOQUE (CASO SIN ACEROS):")
+                    print(f"  ★ AS_LONG: {as_long_texto}")
+                    print(f"  ★ AS_TRA1: {as_tra1_texto}")
+                    print("=" * 60)
+             
 
                 # Después de actualizar los valores en J, forzar recálculo
-                print("Limpiando celdas G5 y G15 después de procesar la prelosa...")
-                try:
-                    # Limpiar G5 y relacionadas
-                    ws.range('G5').value = 0
-    
-                    
-                    # Limpiar G15 y relacionadas
-                    ws.range('G15').value = 0
 
-                    
-                    print("Celdas G5 y G15 limpiadas correctamente")
-                except Exception as e:
-                    print(f"Error al limpiar celdas G5 y G15: {e}")
-                
-                if len(textos_adicionales) > 0:
-                    print("ADVERTENCIA: Se encontraron textos adicionales en la prelosa, pero no se procesarán")
 
             else:
                 # Procesar acero horizontal (G4, H4, J4)
-                for i, texto in textos_horizontal:
+                for i, texto in textos_longitudinal:
                     try:
                         # Extraer información del texto
                         match = re.match(r'∅(\d+\/\d+)\"@(\d+)', texto)
@@ -1390,7 +1531,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         print(f"Error al procesar texto horizontal '{texto}': {e}")
                 
                 # Procesar acero vertical (G14, H14, J14)
-                for i, texto in textos_vertical:
+                for i, texto in textos_transversal:
                     try:
                         # Extraer información del texto
                         match = re.match(r'∅(\d+\/\d+)\"@(\d+)', texto)
@@ -1452,10 +1593,10 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 
                 # Corrección específica: si hay acero vertical pero as_tra1 es 0.2, ajustar a 0.1
                 # Este es un ajuste basado en la lógica del Excel que parece que debería dar 0.1
-                if len(textos_vertical) > 0:
+                if len(textos_transversal) > 0:
                     # Revisar si hay textos con "@20"
                     tiene_espaciamiento_20 = False
-                    for texto in textos_vertical:
+                    for texto in textos_transversal:
                         if "@20" in texto:
                             tiene_espaciamiento_20 = True
                             break
@@ -1469,46 +1610,10 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 print("Verificando si los valores calculados son correctos...")
                 
                 # Si no hay textos (polilíneas vacías), restaurar los valores originales
-                if len(textos_horizontal) == 0 and len(textos_vertical) == 0:
-                    print("No se encontraron textos en la prelosa. Restaurando valores originales.")
-                    as_long = k8_original
-                    as_tra1 = k17_original
                 
-                # Verificar si hay textos horizontales pero as_long es 0 o nulo
-                if len(textos_horizontal) > 0 and (as_long is None or as_long == 0):
-                    print("Calculando valor de respaldo para acero horizontal...")
-                    for texto in textos_horizontal:
-                        match = re.search(r'@(\d+)', texto)
-                        if match:
-                            espaciamiento = match.group(1)
-                            as_long = float(f"0.{espaciamiento}")
-                            print(f"Valor de respaldo calculado para AS_LONG: {as_long}")
-                            break
+    
                 
-                # Verificar si hay textos verticales pero as_tra1 es 0 o nulo
-                if len(textos_vertical) > 0 and (as_tra1 is None or as_tra1 == 0):
-                    print("Calculando valor de respaldo para acero vertical...")
-                    for texto in textos_vertical:
-                        match = re.search(r'@(\d+)', texto)
-                        if match:
-                            espaciamiento = match.group(1)
-                            if espaciamiento == "20":
-                                # Caso especial para espaciamiento 20 en vertical
-                                as_tra1 = 0.100
-                                print(f"Asignando valor especial 0.100 para AS_TRA1 (espaciamiento 20)")
-                            else:
-                                as_tra1 = float(f"0.{espaciamiento}")
-                                print(f"Valor de respaldo calculado para AS_TRA1: {as_tra1}")
-                            break
-                
-                # Corregir caso específico donde esperamos 0.100 pero obtenemos 0.200
-                if len(textos_vertical) > 0 and abs(as_tra1 - 0.2) < 0.01:
-                    for texto in textos_vertical:
-                        match = re.search(r'@(\d+)', texto)
-                        if match and match.group(1) == "20":
-                            print("Corrigiendo valor incorrecto de K17: cambiando 0.200 a 0.100")
-                            as_tra1 = 0.100
-                            break
+                # Verificar si hay textos verticales pero as_tra1 es 0 o nul
                 
                 print("\nVALORES FINALES DESPUÉS DE CORRECCIONES:")
                 print(f"  Celda K8 = {as_long}")
@@ -1525,14 +1630,14 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 as_tra2 = None
                 
                 # Intentar extraer valores de los textos
-                for texto in textos_horizontal:
+                for texto in textos_longitudinal:
                     match = re.search(r'@(\d+)', texto)
                     if match:
                         espaciamiento = match.group(1)
                         as_long = float(f"0.{espaciamiento}")
                         break
                 
-                for texto in textos_vertical:
+                for texto in textos_transversal:
                     match = re.search(r'@(\d+)', texto)
                     if match:
                         espaciamiento = match.group(1)
@@ -1551,22 +1656,51 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 
                 # Para prelosas macizas, asignar valores específicos
                 if tipo_prelosa == "PRELOSA MACIZA":
-                    # Para acero horizontal (AS_LONG)
-                    if len(textos_horizontal) > 0:
+                    # Verificar si tenemos aceros adicionales
+    # Verificar si tenemos aceros adicionales o valores calculados manualmente
+                    tiene_acero_adicional = len(textos_long_adi) > 0 or len(textos_tra_adi) > 0
+                    tiene_valores_default = (len(textos_longitudinal) == 0 and len(textos_transversal) == 0 
+                                        and len(textos_long_adi) == 0 and len(textos_tra_adi) == 0)
+                    
+                    if tiene_acero_adicional:
+                        # Si hay aceros adicionales, usar esos valores que ya calculamos
+                        print("PRELOSA MACIZA con ACEROS ADICIONALES - usando valores calculados previamente")
                         as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(as_long)}"
+                        as_tra1_texto = "1Ø6 mm@.28"  # Valor fijo para prelosas macizas
+                        
+                        # Para AS_TRA2 - usar el valor calculado de K18
+                        if as_tra2 is not None:
+                            as_tra2_texto = f"1Ø8 mm@.{formatear_valor_espaciamiento(as_tra2)}"
+                        else:
+                            as_tra2_texto = None
+                    elif tiene_valores_default:
+                        # Si se usaron valores por defecto, no resetear, usar los valores ya calculados
+                        print("PRELOSA MACIZA SIN ACEROS - usando valores calculados con valores por defecto")
+                        as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(as_long)}"
+                        as_tra1_texto = "1Ø6 mm@.28"  # Valor fijo para prelosas macizas
+                        
+                        # Para AS_TRA2 - usar el valor calculado de K18
+                        if as_tra2 is not None:
+                            as_tra2_texto = f"1Ø8 mm@.{formatear_valor_espaciamiento(as_tra2)}"
+                        else:
+                            as_tra2_texto = None
                     else:
-                        # Si no hay textos horizontales, usar valor original
-                        as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(k8_original)}"
-                    
-                    # Para acero vertical (AS_TRA1) - siempre a 0.28 en prelosas macizas
-                    as_tra1_texto = "1Ø6 mm@.28"
-                    
-                    # Para AS_TRA2 - usar el valor calculado de K18
-                    if as_tra2 is not None:
-                        as_tra2_texto = f"1Ø8 mm@.{formatear_valor_espaciamiento(as_tra2)}"
-                    else:
-                        as_tra2_texto = None
-
+                        # Procesamiento normal para aceros regulares
+                        # Para acero horizontal (AS_LONG)
+                        if len(textos_longitudinal) > 0:
+                            as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(as_long)}"
+                        else:
+                            # Si no hay textos horizontales, usar valor original
+                            as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(k8_original)}"
+                        
+                        # Para acero vertical (AS_TRA1) - siempre a 0.28 en prelosas macizas
+                        as_tra1_texto = "1Ø6 mm@.28"
+                        
+                        # Para AS_TRA2 - usar el valor calculado de K18
+                        if as_tra2 is not None:
+                            as_tra2_texto = f"1Ø8 mm@.{formatear_valor_espaciamiento(as_tra2)}"
+                        else:
+                            as_tra2_texto = None
                 # Para prelosas aligeradas 20
                 elif tipo_prelosa == "PRELOSA ALIGERADA 20":
                     # Para acero horizontal (AS_LONG)
@@ -1595,16 +1729,16 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 # Para otros tipos de prelosas
                 else:
                     # Para acero horizontal
-                    if len(textos_horizontal) > 0:
+                    if len(textos_longitudinal) > 0:
                         as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(as_long)}"
                     else:
                         # Si no hay textos horizontales, usar valor original
                         as_long_texto = f"1Ø3/8\"@.{formatear_valor_espaciamiento(k8_original)}"
                     
                     # Para acero vertical
-                    if len(textos_vertical) > 0:
+                    if len(textos_transversal) > 0:
                         # Caso especial para espaciamiento 20 en vertical
-                        for texto in textos_vertical:
+                        for texto in textos_transversal:
                             if "@20" in texto:
                                 as_tra1_texto = "1Ø6 mm@.10"
                                 break
@@ -1638,6 +1772,12 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 if bloque:
                     total_bloques += 1
                     print(f"{tipo_prelosa} CONCLUIDA CON EXITO")
+                    #limpiar celda g5
+                    ws.range('G5').value = None
+                    ws.range('G6').value = None
+                    #limpiar celda g15
+                    ws.range('G15').value = None
+                    ws.range('G16').value = None
                     print("=" * 52)
                     return True
                 else:
@@ -1670,9 +1810,9 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         except:
             print("Error al cerrar Excel, continuando...")
         
-        capas_acero = ["ACERO HORIZONTAL", "ACERO VERTICAL", 
-                "BD-ACERO HORIZONTAL", "BD-ACERO VERTICAL",
-                "ACERO", "REFUERZO", "ARMADURA"]
+        capas_acero = ["ACERO LONGITUDINAL", "ACERO TRANSVERSAL", "ACERO LONG ADI",
+        "BD-ACERO LONGITUDINAL", "BD-ACERO TRANSVERSAL",
+        "ACERO", "REFUERZO", "ARMADURA"]    
         eliminar_entidades_por_capa(doc, capas_acero)
         
         doc.saveas(output_dxf_path)
@@ -1706,35 +1846,9 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         
         return 0
 
-
-def imprimir_banner_script():
-    """
-    Imprime un banner ASCII decorativo e impresionante con el texto 'ACERO SCRIPT'
-    """
-    banner = """
-    ╔══════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-    ║                                                                                                          ║
-    ║       ▄▄▄       ▄████▄  ▓█████  ██▀███   ▒█████      ██████  ▄████▄   ███▀███   ██▓ ██▓███  ▄▄▄█████▓    ║
-    ║      ▒████▄    ▒██▀ ▀█  ▓█   ▀ ▓██ ▒ ██▒▒██▒  ██▒   ▒██    ▒ ▒██▀ ▀█  ▓██ ▒ ██▒▓██▒▓██░  ██▒▓  ██▒ ▓▒    ║
-    ║      ▒██  ▀█▄  ▒▓█    ▄ ▒███   ▓██ ░▄█ ▒▒██░  ██▒   ░ ▓██▄   ▒▓█    ▄ ▓██ ░▄█ ▒▒██▒▓██░ ██▓▒▒ ▓██░ ▒░    ║
-    ║      ░██▄▄▄▄██ ▒▓▓▄ ▄██▒▒▓█  ▄ ▒██▀▀█▄  ▒██   ██░     ▒   ██▒▒▓▓▄ ▄██▒▒██▀▀█▄  ░██░▒██▄█▓▒ ▒░ ▓██▓ ░     ║
-    ║       ▓█   ▓██▒▒ ▓███▀ ░░▒████▒░██▓ ▒██▒░ ████▓▒░   ▒██████▒▒▒ ▓███▀ ░░██▓ ▒██▒░██░▒██▒ ░  ░  ▒██▒ ░     ║
-    ║       ▒▒   ▓▒█░░ ░▒ ▒  ░░░ ▒░ ░░ ▒▓ ░▒▓░░ ▒░▒░▒░    ▒ ▒▓▒ ▒ ░░ ░▒ ▒  ░░ ▒▓ ░▒▓░░▓  ▒▓▒░ ░  ░  ▒ ░░       ║
-    ║        ▒   ▒▒ ░  ░  ▒    ░ ░  ░  ░▒ ░ ▒░  ░ ▒ ▒░    ░ ░▒  ░ ░  ░  ▒     ░▒ ░ ▒░ ▒ ░░▒ ░         ░        ║
-    ║        ░   ▒   ░           ░     ░░   ░ ░ ░ ░ ▒     ░  ░  ░  ░          ░░   ░  ▒ ░░░         ░          ║
-    ║            ░  ░░ ░         ░  ░   ░         ░ ░           ░  ░ ░         ░      ░                        ║
-    ║                ░                                              ░                                          ║
-    ║                                                                                                          ║
-    ║                        Herramienta para Automatización de Aceros en Prelosas                             ║
-    ║                                      by DODOD SOLUTIONS                                                  ║
-    ║                                                                                                          ║
-    ╚══════════════════════════════════════════════════════════════════════════════════════════════════════════╝
-    """
-    print(banner)
     
 # Punto de entrada principal del script
 if __name__ == "__main__":
-    print(imprimir_banner_script())
 
     file_path = "PLANO1.dxf"
     excel_path = "CONVERTIDOR.xlsx"

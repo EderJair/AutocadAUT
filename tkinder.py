@@ -85,6 +85,7 @@ def proceso_dxf(dxf_path, excel_path, output_path, valores_predeterminados=None)
 
         print("Iniciando procesamiento de DXF...")
         print(imprimir_banner_script())
+        print("=" * 80)
         print(f"Archivo de entrada: {dxf_path}")
         print(f"Archivo Excel: {excel_path}")
         print(f"Archivo de salida: {output_path}")
@@ -94,11 +95,12 @@ def proceso_dxf(dxf_path, excel_path, output_path, valores_predeterminados=None)
         
         if script_module is None:
             print("No se pudo importar el script")
-            time.sleep(3)
+            time.sleep(0.3)
             return
-
+        print("=" * 80)
         print("Valores predeterminados recibidos:")
         print(valores_predeterminados)
+        print("=" * 80)
         
         # Ejecutar procesamiento con valores predeterminados
         total = script_module.procesar_prelosas_con_bloques(
@@ -120,13 +122,13 @@ def proceso_dxf(dxf_path, excel_path, output_path, valores_predeterminados=None)
         
         # Esperar en lugar de usar input()
         print("El proceso ha finalizado. Esta ventana se cerrará en 5 segundos...")
-        time.sleep(5)
+        time.sleep(0.3)
         
     except Exception as e:
         print(f"Error de procesamiento: {e}")
         print(traceback.format_exc())
         print("La aplicación se cerrará en 10 segundos...")
-        time.sleep(10)
+        time.sleep(0.3)
     finally:
         # Restaurar streams de sistema
         sys.stdout = sys.__stdout__
