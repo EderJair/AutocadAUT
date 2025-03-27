@@ -66,6 +66,7 @@ def imprimir_banner_script():
 ║                                       v1.0.0 (2025)                                            ║
 ║                                                                                                ║
 ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
     """
     print(banner)
 
@@ -95,7 +96,7 @@ def proceso_dxf(dxf_path, excel_path, output_path, valores_predeterminados=None)
         
         if script_module is None:
             print("No se pudo importar el script")
-            time.sleep(0.3)
+            time.sleep(0.1)
             return
         print("=" * 80)
         print("Valores predeterminados recibidos:")
@@ -122,13 +123,13 @@ def proceso_dxf(dxf_path, excel_path, output_path, valores_predeterminados=None)
         
         # Esperar en lugar de usar input()
         print("El proceso ha finalizado. Esta ventana se cerrará en 5 segundos...")
-        time.sleep(0.3)
+        time.sleep(0.1)
         
     except Exception as e:
         print(f"Error de procesamiento: {e}")
         print(traceback.format_exc())
         print("La aplicación se cerrará en 10 segundos...")
-        time.sleep(0.3)
+        time.sleep(0.1)
     finally:
         # Restaurar streams de sistema
         sys.stdout = sys.__stdout__

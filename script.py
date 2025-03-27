@@ -1347,7 +1347,17 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     ws.range('H4').value = "3/8\""
                     ws.range('J4').value = espaciamiento_macizas_adi
                     
-                    print(f"Valores default colocados exitosamente en primera fila")
+                    # NUEVO: Colocar los mismos valores en G14, H14, J14
+                    print("\nCOLOCANDO VALORES EN PRIMERA FILA VERTICAL (G14, H14, J14):")
+                    print(f"  - Celda G14 = 1")
+                    print(f"  - Celda H14 = 3/8\"")
+                    print(f"  - Celda J14 = {espaciamiento_macizas_adi}")
+                    
+                    ws.range('G14').value = 1
+                    ws.range('H14').value = "3/8\""
+                    ws.range('J14').value = espaciamiento_macizas_adi
+                    
+                    print(f"Valores default colocados exitosamente en filas 4 y 14")
                     
                     # Procesar los textos de acero long adi
                     datos_textos = []
@@ -1416,24 +1426,113 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         
                         print(f"  ✓ Valores colocados exitosamente en fila {fila}")
                     
+                    # NUEVO: Procesar aceros transversales adicionales
+                    if len(textos_tra_adi) > 0:
+                        print("\n" + "=" * 60)
+                        print(f"PROCESANDO {len(textos_tra_adi)} TEXTOS TRANSVERSALES ADI EN PRELOSA MACIZA ESPECIAL")
+                        print("=" * 60)
+                        
+                        # Procesar los textos de acero transversal adi
+                        datos_textos_tra = []
+                        print("\nPROCESANDO TEXTOS INDIVIDUALES DE ACERO TRANSVERSAL ADI:")
+                        
+                        for i, texto in enumerate(textos_tra_adi):
+                            print("-" * 50)
+                            print(f"TEXTO TRANSVERSAL #{i+1}: '{texto}'")
+                            try:
+                                # Extraer cantidad (número antes de ∅, si no hay se asume 1)
+                                cantidad_match = re.search(r'^(\d+)∅', texto)
+                                if cantidad_match:
+                                    cantidad = cantidad_match.group(1)
+                                    print(f"  ✓ Cantidad extraída del texto: {cantidad}")
+                                else:
+                                    cantidad = "1"
+                                    print(f"  ✓ No se encontró cantidad explícita, asumiendo: {cantidad}")
+                                
+                                # Extraer diámetro del texto (ej: "3/8"")
+                                diametro_match = re.search(r'∅([\d/]+)', texto)
+                                if diametro_match:
+                                    diametro = diametro_match.group(1)
+                                    # Asegurarnos de añadir comillas si es necesario
+                                    if "\"" not in diametro and "/" in diametro:
+                                        diametro_con_comillas = f"{diametro}\""
+                                        print(f"  ✓ Diámetro extraído: {diametro} -> añadiendo comillas: {diametro_con_comillas}")
+                                    else:
+                                        diametro_con_comillas = diametro
+                                        print(f"  ✓ Diámetro extraído (ya con formato correcto): {diametro_con_comillas}")
+                                    
+                                    # Extraer espaciamiento del texto
+                                    espaciamiento_match = re.search(r'@(\d+)', texto)
+                                    if espaciamiento_match:
+                                        separacion = espaciamiento_match.group(1)
+                                        # Convertir a formato decimal (ej: 40 -> 0.40)
+                                        separacion_decimal = float(f"0.{separacion}")
+                                        print(f"  ✓ Espaciamiento extraído: @{separacion} -> {separacion_decimal}")
+                                    else:
+                                        # Si no hay espaciamiento, usar el valor predeterminado
+                                        separacion_decimal = float(espaciamiento_macizas_adi)
+                                        print(f"  ✓ No se encontró espaciamiento en texto, usando valor predeterminado: {espaciamiento_macizas_adi}")
+                                    
+                                    # Guardar los datos procesados
+                                    datos_textos_tra.append([int(cantidad), diametro_con_comillas, separacion_decimal])
+                                    print(f"  ✓ DATOS PROCESADOS Y GUARDADOS: cantidad={cantidad}, diámetro={diametro_con_comillas}, separación={separacion_decimal}")
+                                else:
+                                    print(f"  ✗ ERROR: No se pudo extraer información del diámetro en el texto '{texto}'")
+                            except Exception as e:
+                                print(f"  ✗ ERROR al procesar texto transversal: {e}")
+                                traceback.print_exc()
+                        
+                        print("\nCOLOCANDO VALORES TRANSVERSALES EN FILAS ADICIONALES:")
+                        # Colocar los valores extraídos en las filas adicionales (G15, H15, J15, etc.)
+                        for i, datos in enumerate(datos_textos_tra):
+                            fila = 15 + i  # Comienza en fila 15
+                            cantidad, diametro, separacion = datos
+                            
+                            print(f"FILA TRANSVERSAL #{i+1} (G{fila}, H{fila}, J{fila}):")
+                            print(f"  - Celda G{fila} = {cantidad}")
+                            print(f"  - Celda H{fila} = {diametro}")
+                            print(f"  - Celda J{fila} = {separacion}")
+                            
+                            ws.range(f'G{fila}').value = cantidad
+                            ws.range(f'H{fila}').value = diametro
+                            ws.range(f'J{fila}').value = separacion
+                            
+                            print(f"  ✓ Valores transversales colocados exitosamente en fila {fila}")
+                    
                     # IMPORTANTE: Forzar recálculo y GUARDAR los valores calculados
                     print("\nFORZANDO RECÁLCULO DE EXCEL...")
                     ws.book.app.calculate()
                     time.sleep(0.1)
                     
-                    # GUARDAR el valor K8 calculado
+                    # GUARDAR los valores calculados
                     k8_valor = ws.range('K8').value
-                    print(f"RESULTADO CALCULADO EN EXCEL:")
-                    print(f"  ★ Celda K8 = {k8_valor}")
+                    k17_valor = ws.range('K17').value
+                    k18_valor = ws.range('K18').value if ws.range('K18').value else None
                     
-                    # Formatear valor para el bloque
+                    print(f"RESULTADOS CALCULADOS EN EXCEL:")
+                    print(f"  ★ Celda K8 = {k8_valor}")
+                    print(f"  ★ Celda K17 = {k17_valor}")
+                    if k18_valor is not None:
+                        print(f"  ★ Celda K18 = {k18_valor}")
+                    
+                    # Formatear valores para el bloque
                     k8_formateado = formatear_valor_espaciamiento(k8_valor)
                     as_long_texto = f"1Ø3/8\"@.{k8_formateado}"
                     as_tra1_texto = "1Ø6 mm@.28"  # Valor fijo para prelosas macizas
                     
+                    # NUEVO: Formatear AS_TRA2 usando el valor de K18 si hay textos_tra_adi
+                    if len(textos_tra_adi) > 0 and k18_valor is not None:
+                        k18_formateado = formatear_valor_espaciamiento(k18_valor)
+                        as_tra2_texto = f"1Ø8 mm@.{k18_formateado}"
+                        print(f"  ★ Valor para AS_TRA2 calculado de K18: {as_tra2_texto}")
+                    else:
+                        as_tra2_texto = None
+                    
                     print("\nVALORES FINALES FORMATEADOS PARA BLOQUE:")
                     print(f"  ★ AS_LONG: {as_long_texto} (de K8={k8_valor} -> formato .{k8_formateado})")
                     print(f"  ★ AS_TRA1: {as_tra1_texto} (valor fijo para prelosas macizas)")
+                    if as_tra2_texto:
+                        print(f"  ★ AS_TRA2: {as_tra2_texto} (de K18={k18_valor} -> formato .{formatear_valor_espaciamiento(k18_valor)})")
                     print("=" * 60)
 #
                 if len(textos_longitudinal) == 0 and len(textos_transversal) == 0 and len(textos_long_adi) == 0 and len(textos_tra_adi) == 0:
@@ -1811,7 +1910,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
             print("Error al cerrar Excel, continuando...")
         
         capas_acero = ["ACERO LONGITUDINAL", "ACERO TRANSVERSAL", "ACERO LONG ADI",
-        "BD-ACERO LONGITUDINAL", "BD-ACERO TRANSVERSAL",
+        "BD-ACERO LONGITUDINAL", "BD-ACERO TRANSVERSAL", "ACERO TRA ADI",
         "ACERO", "REFUERZO", "ARMADURA"]    
         eliminar_entidades_por_capa(doc, capas_acero)
         
