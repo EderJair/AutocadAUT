@@ -45,19 +45,68 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos):
         return texto
 
     for text in textos:
-        punto_texto = Point(text.dxf.insert)
-        if poligono.contains(punto_texto):
-            if text.dxftype() == 'MTEXT':
-                texto_contenido = text.text
-            else:
-                texto_contenido = text.dxf.text
+        # Procesar textos normales (TEXT, MTEXT)
+        if text.dxftype() in ['TEXT', 'MTEXT']:
+            punto_texto = Point(text.dxf.insert)
+            if poligono.contains(punto_texto):
+                if text.dxftype() == 'MTEXT':
+                    texto_contenido = text.text
+                else:
+                    texto_contenido = text.dxf.text
 
-            # Aplicar validaciones de formato
-            texto_formateado = validar_formato_texto(texto_contenido)
-            
-            # Solo añadir si el texto no está vacío después de formatear
-            if texto_formateado.strip():
-                textos_en_polilinea.append(texto_formateado)
+                # Aplicar validaciones de formato
+                texto_formateado = validar_formato_texto(texto_contenido)
+                
+                # Solo añadir si el texto no está vacío después de formatear
+                if texto_formateado.strip():
+                    textos_en_polilinea.append(texto_formateado)
+        
+        # Procesar bloques con atributos (INSERT)
+        elif text.dxftype() == 'INSERT':
+            punto_bloque = Point(text.dxf.insert)
+            if poligono.contains(punto_bloque):
+                try:
+                    # Método 1: Obtener atributos usando .attribs
+                    if hasattr(text, 'attribs'):
+                        for attrib in text.attribs:
+                            if hasattr(attrib.dxf, 'tag') and hasattr(attrib.dxf, 'text'):
+                                # Filtrar atributos relevantes
+                                if attrib.dxf.tag in ['ACERO', 'AS_LONG', 'AS_TRA1', 'AS_TRA2']:
+                                    texto_contenido = attrib.dxf.text
+                                    texto_formateado = validar_formato_texto(texto_contenido)
+                                    if texto_formateado.strip():
+                                        print(f"Encontrado atributo en bloque: {attrib.dxf.tag} = {texto_formateado}")
+                                        textos_en_polilinea.append(texto_formateado)
+                except:
+                    pass
+                
+                try:
+                    # Método 2: Obtener atributos iterando sobre los hijos
+                    for child in text:
+                        if child.dxftype() == 'ATTRIB':
+                            if hasattr(child.dxf, 'tag') and hasattr(child.dxf, 'text'):
+                                if child.dxf.tag in ['ACERO', 'AS_LONG', 'AS_TRA1', 'AS_TRA2']:
+                                    texto_contenido = child.dxf.text
+                                    texto_formateado = validar_formato_texto(texto_contenido)
+                                    if texto_formateado.strip():
+                                        print(f"Encontrado atributo (método 2): {child.dxf.tag} = {texto_formateado}")
+                                        textos_en_polilinea.append(texto_formateado)
+                except:
+                    pass
+                
+                try:
+                    # Método 3: Usar get_attribs si está disponible
+                    if hasattr(text, 'get_attribs'):
+                        for attrib in text.get_attribs():
+                            if hasattr(attrib.dxf, 'tag') and hasattr(attrib.dxf, 'text'):
+                                if attrib.dxf.tag in ['ACERO', 'AS_LONG', 'AS_TRA1', 'AS_TRA2']:
+                                    texto_contenido = attrib.dxf.text
+                                    texto_formateado = validar_formato_texto(texto_contenido)
+                                    if texto_formateado.strip():
+                                        print(f"Encontrado atributo (método 3): {attrib.dxf.tag} = {texto_formateado}")
+                                        textos_en_polilinea.append(texto_formateado)
+                except:
+                    pass
 
     return textos_en_polilinea
 
@@ -532,6 +581,27 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         output_dxf_path (str): Ruta del archivo DXF de salida
         valores_predeterminados (dict, optional): Valores predeterminados para cada tipo de prelosa
     """
+
+    banner = """
+        ╔════════════════════════════════════════════════════════════════════════════════════════════════╗
+        ║                                                                                                ║
+        ║     █████╗  ██████╗███████╗██████╗  ██████╗     ███████╗ ██████╗██████╗ ██╗██████╗████████╗    ║
+        ║    ██╔══██╗██╔════╝██╔════╝██╔══██╗██╔═══██╗    ██╔════╝██╔════╝██╔══██╗██║██╔══██╗╚══██╔══╝   ║
+        ║    ███████║██║     █████╗  ██████╔╝██║   ██║    ███████╗██║     ██████╔╝██║██████╔╝   ██║      ║
+        ║    ██╔══██║██║     ██╔══╝  ██╔══██╗██║   ██║    ╚════██║██║     ██╔══██╗██║██╔═══╝    ██║      ║
+        ║    ██║  ██║╚██████╗███████╗██║  ██║╚██████╔╝    ███████║╚██████╗██║  ██║██║██║        ██║      ║
+        ║    ╚═╝  ╚═╝ ╚═════╝╚══════╝╚═╝  ╚═╝ ╚═════╝     ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝╚═╝        ╚═╝      ║
+        ║                                                                                                ║
+        ║                    Herramienta para Automatización de Aceros en Prelosas                       ║
+        ║                                     by DODOD SOLUTIONS                                         ║
+        ║                                       v1.0.0 (2025)                                            ║
+        ║                                                                                                ║
+        ╚════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+    """
+    print(banner)
+
+
     # Valores predeterminados por defecto
     default_valores = {
         'PRELOSA MACIZA': {
@@ -550,6 +620,9 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         for tipo, valores in valores_predeterminados.items():
             if tipo in default_valores:
                 default_valores[tipo].update(valores)
+
+    print("Valores predeterminados combinados:")
+    print(default_valores)
     """
     Procesa las prelosas identificando tipos y contenidos,
     calcula valores usando Excel y coloca bloques con los resultados.
@@ -616,7 +689,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
              entity.dxf.layer in ["ACERO LONGITUDINAL", "ACERO TRANSVERSAL", "ACERO LONG ADI", "ACERO TRA ADI",
                                   "BD-ACERO LONGITUDINAL", "BD-ACERO TRANSVERSAL",
                                   "ACERO", "REFUERZO", "ARMADURA"]]
-        textos = [entity for entity in msp if entity.dxftype() in ['TEXT', 'MTEXT']]
+        textos = [entity for entity in msp if entity.dxftype() in ['TEXT', 'MTEXT', 'INSERT']]
         
         # Contadores para estadísticas
         total_prelosas = 0
@@ -624,13 +697,17 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         
 # Print all layer names in the DXF file
 
-        def calcular_orientacion_prelosa(vertices):
+        def calcular_orientacion_prelosa(vertices, polilineas_longitudinal=None, polilineas_long_adi=None):
             """
-            Calcula la orientación de la prelosa para que el bloque (línea azul) 
-            se alinee con el lado más ESTRECHO de la prelosa.
+            Calcula la orientación del bloque con la siguiente prioridad:
+            1. Dirección de ACERO LONGITUDINAL
+            2. Dirección de ACERO LONG ADI
+            3. Orientación hacia el lado más ESTRECHO de la prelosa
             
             Args:
                 vertices: Lista de puntos (x, y) que forman la polilínea de la prelosa
+                polilineas_longitudinal: Lista de polilíneas de ACERO LONGITUDINAL
+                polilineas_long_adi: Lista de polilíneas de ACERO LONG ADI
                 
             Returns:
                 float: Ángulo de rotación en grados
@@ -639,9 +716,68 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 import math
                 import numpy as np
                 
-                # Si la prelosa no tiene suficientes vértices, usar rotación por defecto
-                if len(vertices) < 3:
-                    return 0.0
+                # 1. Primero intentar con polilíneas longitudinales regulares
+                if polilineas_longitudinal and len(polilineas_longitudinal) > 0:
+                    print("Usando orientación de ACERO LONGITUDINAL para el bloque")
+                    
+                    # Obtener la primera polilínea longitudinal
+                    polilinea_long = polilineas_longitudinal[0]
+                    vertices_long = polilinea_long.get_points('xy')
+                    
+                    # Necesitamos al menos 2 puntos para determinar una dirección
+                    if len(vertices_long) >= 2:
+                        # Calcular la dirección principal de la polilínea longitudinal
+                        vertices_long_array = np.array(vertices_long)
+                        
+                        # Calcular el ángulo usando los primeros dos puntos
+                        x1, y1 = vertices_long_array[0]
+                        x2, y2 = vertices_long_array[1]
+                        
+                        # Calcular la dirección de la línea
+                        dx = x2 - x1
+                        dy = y2 - y1
+                        
+                        # Calcular ángulo en grados
+                        angulo = math.degrees(math.atan2(dy, dx))
+                        
+                        # Normalizar a 0-180 grados (para evitar texto al revés)
+                        angulo_final = angulo % 180
+                        
+                        print(f"Dirección de ACERO LONGITUDINAL detectada: {angulo_final:.2f}°")
+                        return angulo_final
+                
+                # 2. Si no hay ACERO LONGITUDINAL, intentar con ACERO LONG ADI
+                if polilineas_long_adi and len(polilineas_long_adi) > 0:
+                    print("No se encontró ACERO LONGITUDINAL. Usando orientación de ACERO LONG ADI para el bloque")
+                    
+                    # Obtener la primera polilínea de acero adicional
+                    polilinea_long_adi = polilineas_long_adi[0]
+                    vertices_long_adi = polilinea_long_adi.get_points('xy')
+                    
+                    # Necesitamos al menos 2 puntos para determinar una dirección
+                    if len(vertices_long_adi) >= 2:
+                        # Calcular la dirección principal de la polilínea longitudinal adicional
+                        vertices_long_adi_array = np.array(vertices_long_adi)
+                        
+                        # Calcular el ángulo usando los primeros dos puntos
+                        x1, y1 = vertices_long_adi_array[0]
+                        x2, y2 = vertices_long_adi_array[1]
+                        
+                        # Calcular la dirección de la línea
+                        dx = x2 - x1
+                        dy = y2 - y1
+                        
+                        # Calcular ángulo en grados
+                        angulo = math.degrees(math.atan2(dy, dx))
+                        
+                        # Normalizar a 0-180 grados (para evitar texto al revés)
+                        angulo_final = angulo % 180
+                        
+                        print(f"Dirección de ACERO LONG ADI detectada: {angulo_final:.2f}°")
+                        return angulo_final
+                
+                # 3. Si no se pudo determinar orientación con polilíneas, usar el método de caja contenedora
+                print("No se pudo determinar orientación por ACERO LONGITUDINAL ni ACERO LONG ADI, usando método de caja")
                 
                 # Convertir vértices a array NumPy
                 vertices_array = np.array(vertices)
@@ -655,7 +791,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 ancho = max_x - min_x
                 alto = max_y - min_y
                 
-                # CAMBIO CLAVE: Orientar para que la línea azul apunte al lado más ESTRECHO
+                # CAMBIO: Orientar para que la línea azul apunte al lado más ESTRECHO (como en la versión original)
                 if ancho < alto:  # Si el ancho es menor que el alto
                     # Prelosa más alta que ancha -> línea azul horizontal (0°)
                     angulo_final = 0.0
@@ -666,7 +802,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     print(f"Prelosa horizontal (más ancha que alta). Orientando bloque verticalmente: {angulo_final}°")
                 
                 return angulo_final
-                
+                    
             except Exception as e:
                 print(f"Error al calcular la orientación: {e}")
                 traceback.print_exc()
@@ -795,9 +931,19 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 print(f"Diámetro extraído: {diametro_con_comillas}")
                                 
                                 cantidad = int(cantidad)  # Convertir a entero
-                                # Usar el valor predeterminado para el espaciamiento
-                                separacion_decimal = espaciamiento_aligerada
                                 
+                                # NUEVO: Verificar si el texto incluye información de espaciamiento
+# Verificar si el texto incluye información de espaciamiento (funciona para @30 y @.30)
+                                espaciamiento_match = re.search(r'@\.?(\d+)', texto)
+                                if espaciamiento_match:
+                                    # Si encuentra espaciamiento en el texto, lo usa
+                                    separacion = espaciamiento_match.group(1)
+                                    separacion_decimal = float(f"0.{separacion}")
+                                    print(f"Espaciamiento encontrado en texto: @{separacion} -> {separacion_decimal}")
+                                else:
+                                    # Si no encuentra espaciamiento, usa el valor predeterminado
+                                    separacion_decimal = espaciamiento_aligerada
+                                    print(f"No se encontró espaciamiento en texto, usando valor predeterminado: {espaciamiento_aligerada}")
                                 # Escribir en Excel
                                 print(f"Escribiendo en Excel: G4={cantidad}, H4={diametro_con_comillas}, J4={separacion_decimal}")
                                 ws.range('G4').value = cantidad
@@ -809,7 +955,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 print(f"ERROR: No se pudo extraer información del diámetro en el texto '{texto}'")
                         except Exception as e:
                             print(f"ERROR al procesar primer texto en PRELOSA ALIGERADA 20 '{texto}': {e}")
-                    
+                                        
                     # Procesar segundo texto (G5, H5, J5) si existe
                     if len(textos_a_procesar) >= 2:
                         texto = textos_a_procesar[1]
@@ -846,8 +992,18 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 print(f"Diámetro extraído: {diametro_con_comillas}")
                                 
                                 cantidad = int(cantidad)  # Convertir a entero
-                                # Usar el valor predeterminado para el espaciamiento
-                                separacion_decimal = espaciamiento_aligerada
+                                
+                                # NUEVO: Verificar si el texto incluye información de espaciamiento
+                                espaciamiento_match = re.search(r'@\.?(\d+)', texto)
+                                if espaciamiento_match:
+                                    # Si encuentra espaciamiento en el texto, lo usa
+                                    separacion = espaciamiento_match.group(1)
+                                    separacion_decimal = float(f"0.{separacion}")
+                                    print(f"Espaciamiento encontrado en texto: @{separacion} -> {separacion_decimal}")
+                                else:
+                                    # Si no encuentra espaciamiento, usa el valor predeterminado
+                                    separacion_decimal = espaciamiento_aligerada
+                                    print(f"No se encontró espaciamiento en texto, usando valor predeterminado: {espaciamiento_aligerada}")
                                 
                                 # Escribir en Excel
                                 print(f"Escribiendo en Excel: G5={cantidad}, H5={diametro_con_comillas}, J5={separacion_decimal}")
@@ -1328,14 +1484,14 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         print(f"Analizando primer texto para extraer espaciamiento: '{primer_texto}'")
                         
                         # Extraer espaciamiento del primer texto si existe
-                        espaciamiento_match = re.search(r'@(\d+)', primer_texto)
+                        espaciamiento_match = re.search(r'@\.?(\d+)', texto)
                         if espaciamiento_match:
-                            separacion = espaciamiento_match.group(1)
-                            # Convertir a formato decimal (ej: 40 -> 0.40)
-                            espaciamiento_primera_fila = float(f"0.{separacion}")
-                            print(f"Espaciamiento encontrado en primer texto: @{separacion} -> {espaciamiento_primera_fila}")
+                            separacion = int(espaciamiento_match.group(1))
+                            # Convertir a metros (dividir por 100)
+                            separacion_decimal = separacion / 100
                         else:
-                            print(f"No se encontró espaciamiento en primer texto, usando valor predeterminado: {espaciamiento_macizas_adi}")
+                            print(f"ADVERTENCIA: No se encontró espaciamiento en el texto '{texto}'. No se usará valor por defecto.")
+                            separacion_decimal = None
 
                     print("\nCOLOCANDO VALORES EN PRIMERA FILA (G4, H4, J4):")
                     print(f"  - Celda G4 = 1")
@@ -1376,23 +1532,41 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                 cantidad = "1"
                                 print(f"  ✓ No se encontró cantidad explícita, asumiendo: {cantidad}")
                             
-                            # Extraer diámetro del texto (ej: "3/8"")
-                            diametro_match = re.search(r'∅([\d/]+)', texto)
-                            if diametro_match:
-                                diametro = diametro_match.group(1)
-                                # Asegurarnos de añadir comillas si es necesario
-                                if "\"" not in diametro and "/" in diametro:
-                                    diametro_con_comillas = f"{diametro}\""
-                                    print(f"  ✓ Diámetro extraído: {diametro} -> añadiendo comillas: {diametro_con_comillas}")
-                                else:
-                                    diametro_con_comillas = diametro
-                                    print(f"  ✓ Diámetro extraído (ya con formato correcto): {diametro_con_comillas}")
-                                
+                            # Extraer diámetro del texto con manejo especial para mm
+                            diametro_con_comillas = None
+                            
+                            # Primero intentar detectar formato específico mm
+                            if "mm" in texto:
+                                mm_match = re.search(r'∅(\d+)mm', texto)
+                                if mm_match:
+                                    diametro = mm_match.group(1)
+                                    diametro_con_comillas = f"{diametro}mm"
+                                    print(f"  ✓ Detectado diámetro en milímetros: {diametro_con_comillas}")
+                            
+                            # Si no se encontró formato mm específico, intentar formato general
+                            if diametro_con_comillas is None:
+                                diametro_match = re.search(r'∅([\d/]+)', texto)
+                                if diametro_match:
+                                    diametro = diametro_match.group(1)
+                                    # Si es un número simple y el texto menciona mm, aplicar formato mm
+                                    if "mm" in texto and "/" not in diametro:
+                                        diametro_con_comillas = f"{diametro}mm"
+                                        print(f"  ✓ Detectado número simple con indicación mm: {diametro_con_comillas}")
+                                    # Si es fraccional, añadir comillas si es necesario
+                                    elif "/" in diametro and "\"" not in diametro:
+                                        diametro_con_comillas = f"{diametro}\""
+                                        print(f"  ✓ Diámetro extraído: {diametro} -> añadiendo comillas: {diametro_con_comillas}")
+                                    else:
+                                        diametro_con_comillas = diametro
+                                        print(f"  ✓ Diámetro extraído (ya con formato correcto): {diametro_con_comillas}")
+                            
+                            # Continuar solo si se extrajo un diámetro
+                            if diametro_con_comillas:
                                 # Extraer espaciamiento del texto
-                                espaciamiento_match = re.search(r'@(\d+)', texto)
+                                espaciamiento_match = re.search(r'@\.?(\d+)', texto)
                                 if espaciamiento_match:
                                     separacion = espaciamiento_match.group(1)
-                                    # Convertir a formato decimal (ej: 40 -> 0.40)
+                                    # Convertir a formato decimal (ej: 30 -> 0.30)
                                     separacion_decimal = float(f"0.{separacion}")
                                     print(f"  ✓ Espaciamiento extraído: @{separacion} -> {separacion_decimal}")
                                 else:
@@ -1408,7 +1582,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         except Exception as e:
                             print(f"  ✗ ERROR al procesar texto: {e}")
                             traceback.print_exc()
-                    
+
                     print("\nCOLOCANDO VALORES EN FILAS ADICIONALES:")
                     # Colocar los valores extraídos en las filas adicionales (G5, H5, J5, etc.)
                     for i, datos in enumerate(datos_textos):
@@ -1449,23 +1623,47 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                     cantidad = "1"
                                     print(f"  ✓ No se encontró cantidad explícita, asumiendo: {cantidad}")
                                 
-                                # Extraer diámetro del texto (ej: "3/8"")
-                                diametro_match = re.search(r'∅([\d/]+)', texto)
-                                if diametro_match:
-                                    diametro = diametro_match.group(1)
-                                    # Asegurarnos de añadir comillas si es necesario
-                                    if "\"" not in diametro and "/" in diametro:
-                                        diametro_con_comillas = f"{diametro}\""
-                                        print(f"  ✓ Diámetro extraído: {diametro} -> añadiendo comillas: {diametro_con_comillas}")
+                                # Verificar si el texto tiene formato de milímetros
+                                if "mm" in texto:
+                                    # Caso específico para milímetros
+                                    diametro_match = re.search(r'∅(\d+)mm', texto)
+                                    if diametro_match:
+                                        diametro = diametro_match.group(1)
+                                        diametro_con_comillas = f"{diametro}mm"
+                                        print(f"  ✓ Diámetro extraído (milímetros): {diametro_con_comillas}")
                                     else:
-                                        diametro_con_comillas = diametro
-                                        print(f"  ✓ Diámetro extraído (ya con formato correcto): {diametro_con_comillas}")
-                                    
+                                        # Si no pudo extraer con formato exacto, intentar el método genérico
+                                        diametro_match = re.search(r'∅([\d/]+)', texto)
+                                        if diametro_match:
+                                            diametro = diametro_match.group(1)
+                                            diametro_con_comillas = f"{diametro}mm"  # Forzar formato mm porque sabemos que está en texto
+                                            print(f"  ✓ Diámetro extraído (milímetros, método alternativo): {diametro_con_comillas}")
+                                        else:
+                                            diametro_con_comillas = None
+                                            print(f"  ✗ ERROR: No se pudo extraer diámetro del texto '{texto}'")
+                                else:
+                                    # Caso para fraccionales con o sin comillas
+                                    diametro_match = re.search(r'∅([\d/]+)', texto)
+                                    if diametro_match:
+                                        diametro = diametro_match.group(1)
+                                        # Asegurarnos de añadir comillas si es necesario
+                                        if "\"" not in diametro and "/" in diametro:
+                                            diametro_con_comillas = f"{diametro}\""
+                                            print(f"  ✓ Diámetro extraído: {diametro} -> añadiendo comillas: {diametro_con_comillas}")
+                                        else:
+                                            diametro_con_comillas = diametro
+                                            print(f"  ✓ Diámetro extraído (ya con formato correcto): {diametro_con_comillas}")
+                                    else:
+                                        diametro_con_comillas = None
+                                        print(f"  ✗ ERROR: No se pudo extraer diámetro del texto '{texto}'")
+                                
+                                # Continuar solo si se extrajo un diámetro
+                                if diametro_con_comillas:
                                     # Extraer espaciamiento del texto
-                                    espaciamiento_match = re.search(r'@(\d+)', texto)
+                                    espaciamiento_match = re.search(r'@\.?(\d+)', texto)
                                     if espaciamiento_match:
                                         separacion = espaciamiento_match.group(1)
-                                        # Convertir a formato decimal (ej: 40 -> 0.40)
+                                        # Convertir a formato decimal (ej: 30 -> 0.30)
                                         separacion_decimal = float(f"0.{separacion}")
                                         print(f"  ✓ Espaciamiento extraído: @{separacion} -> {separacion_decimal}")
                                     else:
@@ -1477,11 +1675,11 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                                     datos_textos_tra.append([int(cantidad), diametro_con_comillas, separacion_decimal])
                                     print(f"  ✓ DATOS PROCESADOS Y GUARDADOS: cantidad={cantidad}, diámetro={diametro_con_comillas}, separación={separacion_decimal}")
                                 else:
-                                    print(f"  ✗ ERROR: No se pudo extraer información del diámetro en el texto '{texto}'")
+                                    print(f"  ✗ ERROR: No se pudo procesar completo el texto '{texto}' por falta de diámetro")
                             except Exception as e:
                                 print(f"  ✗ ERROR al procesar texto transversal: {e}")
                                 traceback.print_exc()
-                        
+                                                    
                         print("\nCOLOCANDO VALORES TRANSVERSALES EN FILAS ADICIONALES:")
                         # Colocar los valores extraídos en las filas adicionales (G15, H15, J15, etc.)
                         for i, datos in enumerate(datos_textos_tra):
@@ -1857,9 +2055,14 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 if as_tra2_texto:
                     print(f"    AS_TRA2: {as_tra2_texto}")
                 
-                # Calcular la orientación del bloque para que el acero azul apunte al lado más estrecho
-                angulo_rotacion = calcular_orientacion_prelosa(vertices)
-                print(f"Orientando bloque a {angulo_rotacion:.2f}° (alineado con lado más estrecho)")
+
+                # Filtrar polilíneas longitudinales y adicionales
+                polilineas_longitudinal = [p for p in polilineas_dentro if "LONGITUDINAL" in p.dxf.layer.upper() and "ADI" not in p.dxf.layer.upper()]
+                polilineas_long_adi = [p for p in polilineas_dentro if "LONG ADI" in p.dxf.layer.upper()]
+
+                # Calcular la orientación considerando ambos tipos de acero
+                angulo_rotacion = calcular_orientacion_prelosa(vertices, polilineas_longitudinal, polilineas_long_adi)
+                print(f"Orientando bloque a {angulo_rotacion:.2f}° (alineado con acero longitudinal)")
                 
                 # Crear una copia de la definición del bloque con la orientación calculada
                 definicion_bloque_orientada = definicion_bloque.copy()
