@@ -419,6 +419,10 @@ class DXFProcessorApp:
                 'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
             },
+            'PRELOSA MACIZA 15': {
+                'espaciamiento': tk.StringVar(value='0.15'),
+                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+            },
             'PRELOSA ALIGERADA 20': {
                 'espaciamiento': tk.StringVar(value='0.605'),
                 'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
@@ -463,6 +467,7 @@ class DXFProcessorApp:
         # Tipos de prelosa
         tipos_prelosa = [
             'PRELOSA MACIZA', 
+            'PRELOSA MACIZA 15',
             'PRELOSA ALIGERADA 20', 
             'PRELOSA ALIGERADA 20 - 2 SENT'
         ]
