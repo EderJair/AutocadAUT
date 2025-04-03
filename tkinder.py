@@ -423,11 +423,23 @@ class DXFProcessorApp:
                 'espaciamiento': tk.StringVar(value='0.15'),
                 'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
             },
+            'PRELOSA MACIZA TIPO 3': {
+                'espaciamiento': tk.StringVar(value='0.15'),
+                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+            },
+            'PRELOSA ALIGERADA 25': {
+                'espaciamiento': tk.StringVar(value='0.25'),
+                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+            },
             'PRELOSA ALIGERADA 20': {
                 'espaciamiento': tk.StringVar(value='0.605'),
                 'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
             },
             'PRELOSA ALIGERADA 20 - 2 SENT': {
+                'espaciamiento': tk.StringVar(value='0.605'),
+                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+            },
+            'PRELOSA ALIGERADA 25 - 2 SENT': {
                 'espaciamiento': tk.StringVar(value='0.605'),
                 'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
             }
@@ -468,8 +480,11 @@ class DXFProcessorApp:
         tipos_prelosa = [
             'PRELOSA MACIZA', 
             'PRELOSA MACIZA 15',
+            'PRELOSA MACIZA TIPO 3',
             'PRELOSA ALIGERADA 20', 
-            'PRELOSA ALIGERADA 20 - 2 SENT'
+            'PRELOSA ALIGERADA 20 - 2 SENT',
+            'PRELOSA ALIGERADA 25',
+            'PRELOSA ALIGERADA 25 - 2 SENT'
         ]
         
         # Crear campos para cada tipo con diseño de tabla
