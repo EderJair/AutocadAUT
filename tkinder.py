@@ -349,20 +349,32 @@ class DXFProcessorApp:
                                padding=(15, 10))
         header_label.pack()
         
-        # Panel de archivos
-        self.crear_panel_archivos(content_inner)
+        # Crear un frame con columnas para la disposición de paneles
+        panels_frame = ttk.Frame(content_inner)
+        panels_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Panel de configuración
-        self.crear_panel_configuracion(content_inner)
+        # Columna izquierda para archivos y configuración
+        left_column = ttk.Frame(panels_frame)
+        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         
-        # Barra de progreso
-        self.crear_barra_progreso(content_inner)
+        # Columna derecha para progreso, acción y registro
+        right_column = ttk.Frame(panels_frame)
+        right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
         
-        # Panel de acción
-        self.crear_panel_accion(content_inner)
+        # Panel de archivos (columna izquierda)
+        self.crear_panel_archivos(left_column)
         
-        # Panel de registro
-        self.crear_panel_registro(content_inner)
+        # Panel de configuración (columna izquierda)
+        self.crear_panel_configuracion(left_column)
+        
+        # Barra de progreso (columna derecha)
+        self.crear_barra_progreso(right_column)
+        
+        # Panel de acción (columna derecha)
+        self.crear_panel_accion(right_column)
+        
+        # Panel de registro (columna derecha)
+        self.crear_panel_registro(right_column)
     
     def crear_panel_archivos(self, parent):
         """Crear panel de selección de archivos"""
@@ -417,31 +429,35 @@ class DXFProcessorApp:
         self.default_values = {
             'PRELOSA MACIZA': {
                 'espaciamiento': tk.StringVar(value='0.20'),
-                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+                'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA MACIZA 15': {
                 'espaciamiento': tk.StringVar(value='0.15'),
-                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+                'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA MACIZA TIPO 3': {
                 'espaciamiento': tk.StringVar(value='0.15'),
-                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+                'acero': tk.StringVar(value='3/8"')
+            },
+            'PRELOSA MACIZA TIPO 4': {
+                'espaciamiento': tk.StringVar(value='0.15'),
+                'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 25': {
                 'espaciamiento': tk.StringVar(value='0.25'),
-                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+                'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 20': {
                 'espaciamiento': tk.StringVar(value='0.605'),
-                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+                'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 20 - 2 SENT': {
                 'espaciamiento': tk.StringVar(value='0.605'),
-                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+                'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 25 - 2 SENT': {
                 'espaciamiento': tk.StringVar(value='0.605'),
-                'acero': tk.StringVar(value='3/8"')  # Valor predeterminado para acero
+                'acero': tk.StringVar(value='3/8"')
             }
         }
         
@@ -456,21 +472,29 @@ class DXFProcessorApp:
         general_tab = ttk.Frame(notebook)
         notebook.add(general_tab, text="General")
         
-        # Tabla de configuración en pestaña general
-        config_frame = ttk.Frame(general_tab)
-        config_frame.pack(fill=tk.X, padx=10, pady=10)
+        # Añadir scrollable frame para la tabla de configuración
+        # Primero, un canvas para el scrolling
+        canvas = tk.Canvas(general_tab, height=250)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Scrollbar vertical
+        vsb = ttk.Scrollbar(general_tab, orient="vertical", command=canvas.yview)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.configure(yscrollcommand=vsb.set)
+        
+        # Frame que contiene los widgets de configuración
+        config_frame = ttk.Frame(canvas)
+        canvas.create_window((0, 0), window=config_frame, anchor=tk.NW)
         
         # Cabeceras de tabla
         ttk.Label(config_frame, text="Tipo de Prelosa", font=('Segoe UI', 10, 'bold')).grid(
             row=0, column=0, sticky='w', padx=10, pady=(0, 10))
         
-        ttk.Label(config_frame, text="Espaciamiento (m)", font=('Segoe UI', 10, 'bold')).grid(
+        ttk.Label(config_frame, text="Espaciamiento", font=('Segoe UI', 10, 'bold')).grid(
             row=0, column=1, sticky='w', padx=10, pady=(0, 10))
         
-        ttk.Label(config_frame, text="Acero (desarrollo)", font=('Segoe UI', 10, 'bold')).grid(
+        ttk.Label(config_frame, text="Acero", font=('Segoe UI', 10, 'bold')).grid(
             row=0, column=2, sticky='w', padx=10, pady=(0, 10))
-        
-
         
         # Separador horizontal
         separator = ttk.Separator(config_frame, orient='horizontal')
@@ -481,6 +505,7 @@ class DXFProcessorApp:
             'PRELOSA MACIZA', 
             'PRELOSA MACIZA 15',
             'PRELOSA MACIZA TIPO 3',
+            'PRELOSA MACIZA TIPO 4',
             'PRELOSA ALIGERADA 20', 
             'PRELOSA ALIGERADA 20 - 2 SENT',
             'PRELOSA ALIGERADA 25',
@@ -510,14 +535,21 @@ class DXFProcessorApp:
                 state="readonly"
             )
             acero_combo.grid(row=idx+2, column=2, sticky='w', padx=10, pady=8)
-            
-            # Agregar un pequeño descriptivo y ayuda
-
         
-            
-            # Crear tooltip para espaciamiento
-            
-            # Crear tooltip para acero
+        # Actualizar tamaño del canvas basado en su contenido
+        def _configure_canvas(event):
+            # Actualizar el scrollregion para que incluya todo el contenido
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas_width = event.width
+            canvas.itemconfig(canvas_window, width=canvas_width)
+        
+        canvas_window = canvas.create_window((0, 0), window=config_frame, anchor="nw")
+        config_frame.bind("<Configure>", _configure_canvas)
+        canvas.bind("<Configure>", _configure_canvas)
+        
+        # Asegurar que el canvas tenga un tamaño razonable
+        canvas.update_idletasks()
+        canvas.config(width=500)
     
     def crear_barra_progreso(self, parent):
         """Crear barra de progreso"""
@@ -603,6 +635,7 @@ class DXFProcessorApp:
         self.log_area.tag_configure("warning", foreground=self.colors['warning'])
         self.log_area.tag_configure("error", foreground=self.colors['error'])
         self.log_area.tag_configure("bold", font=('Consolas', 10, 'bold'))
+        self.log_area.tag_configure("muted", foreground=self.colors['muted_fg'])
         
         # Scrollbar
         scrollbar = ttk.Scrollbar(log_panel, orient="vertical", command=self.log_area.yview)
@@ -735,7 +768,7 @@ class DXFProcessorApp:
             self.add_to_log("Valores predeterminados:", "bold")
             
             for tipo, valores in valores_predeterminados.items():
-                self.add_to_log(f"  {tipo}: espaciamiento = {valores['espaciamiento']}")
+                self.add_to_log(f"  {tipo}: espaciamiento = {valores['espaciamiento']}, acero = {valores['acero']}")
             
             # Configurar interfaz para procesamiento
             self.process_button.config(state=tk.DISABLED)
