@@ -436,30 +436,41 @@ class DXFProcessorApp:
                 'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA MACIZA TIPO 3': {
-                'espaciamiento': tk.StringVar(value='0.15'),
+                'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA MACIZA TIPO 4': {
-                'espaciamiento': tk.StringVar(value='0.15'),
-                'acero': tk.StringVar(value='3/8"')
-            },
-            'PRELOSA ALIGERADA 25': {
-                'espaciamiento': tk.StringVar(value='0.25'),
+                'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 20': {
-                'espaciamiento': tk.StringVar(value='0.605'),
+                'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 20 - 2 SENT': {
-                'espaciamiento': tk.StringVar(value='0.605'),
+                'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             },
-            'PRELOSA ALIGERADA 25 - 2 SENT': {
-                'espaciamiento': tk.StringVar(value='0.605'),
+            'PRELOSA ALIGERADA 25': {
+                'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             }
+            # ... resto de tipos predefinidos ...
         }
+        
+        # Lista dinámica para almacenar todos los tipos de prelosa (predefinidos + personalizados)
+        self.tipos_prelosa = [
+            'PRELOSA MACIZA', 
+            'PRELOSA MACIZA 15',
+            'PRELOSA MACIZA TIPO 3',
+            'PRELOSA MACIZA TIPO 4',
+            'PRELOSA ALIGERADA 20', 
+            'PRELOSA ALIGERADA 20 - 2 SENT',
+            'PRELOSA ALIGERADA 25',
+            'PRELOSA ALIGERADA 25 - 2 SENT',
+            'PRELOSA ALIGERADA 30',
+            'PRELOSA ALIGERADA 30 - 2 SENT'
+        ]
         
         # Opciones de acero disponibles
         self.acero_opciones = ['6mm', '8mm', '3/8"', '12mm', '1/2"', '5/8"', '3/4"', '1']
@@ -483,58 +494,41 @@ class DXFProcessorApp:
         canvas.configure(yscrollcommand=vsb.set)
         
         # Frame que contiene los widgets de configuración
-        config_frame = ttk.Frame(canvas)
-        canvas.create_window((0, 0), window=config_frame, anchor=tk.NW)
+        self.config_frame = ttk.Frame(canvas)
+        canvas.create_window((0, 0), window=self.config_frame, anchor=tk.NW)
         
         # Cabeceras de tabla
-        ttk.Label(config_frame, text="Tipo de Prelosa", font=('Segoe UI', 10, 'bold')).grid(
+        ttk.Label(self.config_frame, text="Tipo de Prelosa", font=('Segoe UI', 10, 'bold')).grid(
             row=0, column=0, sticky='w', padx=10, pady=(0, 10))
         
-        ttk.Label(config_frame, text="Espaciamiento", font=('Segoe UI', 10, 'bold')).grid(
+        ttk.Label(self.config_frame, text="Espaciamiento", font=('Segoe UI', 10, 'bold')).grid(
             row=0, column=1, sticky='w', padx=10, pady=(0, 10))
         
-        ttk.Label(config_frame, text="Acero", font=('Segoe UI', 10, 'bold')).grid(
+        ttk.Label(self.config_frame, text="Acero", font=('Segoe UI', 10, 'bold')).grid(
             row=0, column=2, sticky='w', padx=10, pady=(0, 10))
         
+        # Columna para botón Eliminar (para tipos personalizados)
+        ttk.Label(self.config_frame, text="Acciones", font=('Segoe UI', 10, 'bold')).grid(
+            row=0, column=3, sticky='w', padx=10, pady=(0, 10))
+        
         # Separador horizontal
-        separator = ttk.Separator(config_frame, orient='horizontal')
+        separator = ttk.Separator(self.config_frame, orient='horizontal')
         separator.grid(row=1, column=0, columnspan=4, sticky='ew', pady=(0, 10))
         
-        # Tipos de prelosa
-        tipos_prelosa = [
-            'PRELOSA MACIZA', 
-            'PRELOSA MACIZA 15',
-            'PRELOSA MACIZA TIPO 3',
-            'PRELOSA MACIZA TIPO 4',
-            'PRELOSA ALIGERADA 20', 
-            'PRELOSA ALIGERADA 20 - 2 SENT',
-            'PRELOSA ALIGERADA 25',
-            'PRELOSA ALIGERADA 25 - 2 SENT'
-        ]
+        # Llenar la tabla con los tipos predefinidos
+        self.render_prelosa_table()
         
-        # Crear campos para cada tipo con diseño de tabla
-        for idx, tipo in enumerate(tipos_prelosa):
-            # Etiqueta del tipo de prelosa
-            ttk.Label(config_frame, text=tipo).grid(
-                row=idx+2, column=0, sticky='w', padx=10, pady=8)
-            
-            # Campo de entrada para espaciamiento
-            entry = ttk.Entry(
-                config_frame, 
-                textvariable=self.default_values[tipo]['espaciamiento'], 
-                width=15
-            )
-            entry.grid(row=idx+2, column=1, sticky='w', padx=10, pady=8)
-            
-            # ComboBox para selección de acero
-            acero_combo = ttk.Combobox(
-                config_frame,
-                textvariable=self.default_values[tipo]['acero'],
-                values=self.acero_opciones,
-                width=10,
-                state="readonly"
-            )
-            acero_combo.grid(row=idx+2, column=2, sticky='w', padx=10, pady=8)
+        # Botón para agregar nuevo tipo de prelosa
+        add_frame = ttk.Frame(self.config_frame)
+        add_frame.grid(row=len(self.tipos_prelosa)+2, column=0, columnspan=4, sticky='ew', pady=10)
+        
+        add_button = ttk.Button(
+            add_frame, 
+            text="+ AGREGAR TIPO DE PRELOSA",
+            style="Accent.TButton",
+            command=self.add_new_prelosa_type
+        )
+        add_button.pack(pady=5)
         
         # Actualizar tamaño del canvas basado en su contenido
         def _configure_canvas(event):
@@ -543,13 +537,182 @@ class DXFProcessorApp:
             canvas_width = event.width
             canvas.itemconfig(canvas_window, width=canvas_width)
         
-        canvas_window = canvas.create_window((0, 0), window=config_frame, anchor="nw")
-        config_frame.bind("<Configure>", _configure_canvas)
+        canvas_window = canvas.create_window((0, 0), window=self.config_frame, anchor="nw")
+        self.config_frame.bind("<Configure>", _configure_canvas)
         canvas.bind("<Configure>", _configure_canvas)
         
         # Asegurar que el canvas tenga un tamaño razonable
         canvas.update_idletasks()
         canvas.config(width=500)
+
+    def render_prelosa_table(self):
+        """Renderiza la tabla de tipos de prelosa con sus valores"""
+        # Limpiar widgets existentes a partir de la fila 2
+        for widget in self.config_frame.grid_slaves():
+            if int(widget.grid_info()["row"]) >= 2:
+                widget.grid_forget()
+        
+        # Crear campos para cada tipo con diseño de tabla
+        for idx, tipo in enumerate(self.tipos_prelosa):
+            # Si es un tipo personalizado, puede que no esté en default_values
+            if tipo not in self.default_values:
+                self.default_values[tipo] = {
+                    'espaciamiento': tk.StringVar(value='0.20'),
+                    'acero': tk.StringVar(value='3/8"')
+                }
+            
+            # Etiqueta del tipo de prelosa
+            ttk.Label(self.config_frame, text=tipo).grid(
+                row=idx+2, column=0, sticky='w', padx=10, pady=8)
+            
+            # Campo de entrada para espaciamiento
+            entry = ttk.Entry(
+                self.config_frame, 
+                textvariable=self.default_values[tipo]['espaciamiento'], 
+                width=15
+            )
+            entry.grid(row=idx+2, column=1, sticky='w', padx=10, pady=8)
+            
+            # ComboBox para selección de acero
+            acero_combo = ttk.Combobox(
+                self.config_frame,
+                textvariable=self.default_values[tipo]['acero'],
+                values=self.acero_opciones,
+                width=10,
+                state="readonly"
+            )
+            acero_combo.grid(row=idx+2, column=2, sticky='w', padx=10, pady=8)
+            
+            # Botón de eliminar (solo para tipos personalizados)
+            if tipo not in ['PRELOSA MACIZA', 'PRELOSA MACIZA 15', 'PRELOSA MACIZA TIPO 3', 'PRELOSA MACIZA TIPO 4',
+                            'PRELOSA ALIGERADA 20', 'PRELOSA ALIGERADA 20 - 2 SENT', 'PRELOSA ALIGERADA 25',
+                            'PRELOSA ALIGERADA 25 - 2 SENT', 'PRELOSA ALIGERADA 30', 'PRELOSA ALIGERADA 30 - 2 SENT']:
+                delete_button = ttk.Button(
+                    self.config_frame,
+                    text="Eliminar",
+                    command=lambda t=tipo: self.delete_prelosa_type(t)
+                )
+                delete_button.grid(row=idx+2, column=3, padx=10, pady=8)
+        
+        # Botón para agregar nuevo tipo de prelosa
+        add_frame = ttk.Frame(self.config_frame)
+        add_frame.grid(row=len(self.tipos_prelosa)+2, column=0, columnspan=4, sticky='ew', pady=10)
+        
+        add_button = ttk.Button(
+            add_frame, 
+            text="+ AGREGAR TIPO DE PRELOSA",
+            style="Accent.TButton",
+            command=self.add_new_prelosa_type
+        )
+        add_button.pack(pady=5)
+
+    def add_new_prelosa_type(self):
+        """Muestra un diálogo para agregar un nuevo tipo de prelosa"""
+        # Crear ventana de diálogo
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Agregar Nuevo Tipo de Prelosa")
+        dialog.geometry("400x200")
+        dialog.resizable(False, False)
+        dialog.transient(self.master)
+        dialog.grab_set()
+        
+        # Configurar como modal
+        dialog.focus_set()
+        
+        # Contenido
+        content_frame = ttk.Frame(dialog, padding=20)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Nombre del tipo
+        ttk.Label(content_frame, text="Nombre del tipo de prelosa:").grid(
+            row=0, column=0, sticky='w', pady=(0, 10))
+        
+        nombre_var = tk.StringVar()
+        nombre_entry = ttk.Entry(content_frame, textvariable=nombre_var, width=30)
+        nombre_entry.grid(row=0, column=1, sticky='w', padx=(10, 0), pady=(0, 10))
+        nombre_entry.focus()
+        
+        # Espaciamiento
+        ttk.Label(content_frame, text="Espaciamiento predeterminado:").grid(
+            row=1, column=0, sticky='w', pady=(0, 10))
+        
+        espaciamiento_var = tk.StringVar(value="0.20")
+        espaciamiento_entry = ttk.Entry(content_frame, textvariable=espaciamiento_var, width=10)
+        espaciamiento_entry.grid(row=1, column=1, sticky='w', padx=(10, 0), pady=(0, 10))
+        
+        # Acero
+        ttk.Label(content_frame, text="Acero predeterminado:").grid(
+            row=2, column=0, sticky='w', pady=(0, 10))
+        
+        acero_var = tk.StringVar(value="3/8\"")
+        acero_combo = ttk.Combobox(
+            content_frame,
+            textvariable=acero_var,
+            values=self.acero_opciones,
+            width=10,
+            state="readonly"
+        )
+        acero_combo.grid(row=2, column=1, sticky='w', padx=(10, 0), pady=(0, 10))
+        
+        # Botones
+        button_frame = ttk.Frame(content_frame)
+        button_frame.grid(row=3, column=0, columnspan=2, pady=(10, 0))
+        
+        def add_type():
+            nombre = nombre_var.get().strip().upper()
+            if not nombre:
+                messagebox.showerror("Error", "Debe ingresar un nombre para el tipo de prelosa")
+                return
+            
+            # Verificar si ya existe
+            if nombre in self.tipos_prelosa:
+                messagebox.showerror("Error", "Ya existe un tipo de prelosa con ese nombre")
+                return
+            
+            # Agregar nuevo tipo
+            self.tipos_prelosa.append(nombre)
+            self.default_values[nombre] = {
+                'espaciamiento': tk.StringVar(value=espaciamiento_var.get()),
+                'acero': tk.StringVar(value=acero_var.get())
+            }
+            
+            # Actualizar tabla
+            self.render_prelosa_table()
+            
+            # Cerrar diálogo
+            dialog.destroy()
+            
+            # Mensaje de éxito
+            self.add_to_log(f"Se agregó el tipo de prelosa: {nombre}", "success")
+        
+        ttk.Button(
+            button_frame,
+            text="Agregar",
+            style="Accent.TButton",
+            command=add_type
+        ).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(
+            button_frame,
+            text="Cancelar",
+            command=dialog.destroy
+        ).pack(side=tk.LEFT, padx=5)
+
+    def delete_prelosa_type(self, tipo):
+        """Elimina un tipo de prelosa personalizado"""
+        # Confirmar eliminación
+        if messagebox.askyesno("Confirmar eliminación", 
+                            f"¿Está seguro de eliminar el tipo de prelosa '{tipo}'?"):
+            # Eliminar de la lista y del diccionario
+            self.tipos_prelosa.remove(tipo)
+            if tipo in self.default_values:
+                del self.default_values[tipo]
+            
+            # Actualizar tabla
+            self.render_prelosa_table()
+            
+            # Mensaje de éxito
+            self.add_to_log(f"Se eliminó el tipo de prelosa: {tipo}", "info")
     
     def crear_barra_progreso(self, parent):
         """Crear barra de progreso"""
@@ -758,6 +921,13 @@ class DXFProcessorApp:
                 } 
                 for tipo, valores in self.default_values.items()
             }
+
+            tipos_personalizados = [
+                tipo for tipo in self.tipos_prelosa 
+                if tipo not in ['PRELOSA MACIZA', 'PRELOSA MACIZA 15', 'PRELOSA MACIZA TIPO 3', 'PRELOSA MACIZA TIPO 4',
+                                'PRELOSA ALIGERADA 20', 'PRELOSA ALIGERADA 20 - 2 SENT', 'PRELOSA ALIGERADA 25',
+                                'PRELOSA ALIGERADA 25 - 2 SENT', 'PRELOSA ALIGERADA 30', 'PRELOSA ALIGERADA 30 - 2 SENT']
+            ]
                     
             # Limpiar log y mostrar información inicial
             self.clear_log()
