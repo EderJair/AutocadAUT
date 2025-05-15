@@ -10,422 +10,497 @@ import re
 import platform
 import importlib.util
 import threading
-from PIL import Image, ImageTk  # Necesitarás instalar pillow: pip install pillow
+from PIL import Image, ImageTk  # You'll need to install pillow: pip install pillow
 
 class DXFProcessorApp:
     def __init__(self, master):
         self.master = master
-        master.title("ACERO SCRIPT - DODOD SOLUTIONS v1.0.0")
-        master.geometry("1000x950")
-        master.minsize(900, 750)
+        master.title("ACERO SCRIPT v1.0.0")
+        master.geometry("1000x700")
+        master.minsize(900, 650)
         
-        # Variables de estado
+        # State variables
         self.is_dark_mode = tk.BooleanVar(value=False)
         self.processing = False
         
-        # Directorio del script
+        # Script directory
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         
-        # Cargar imágenes e íconos
-        self.load_icons()
-        
-        # Configurar estilo personalizado
-        self.configurar_estilo()
-        
-        # Ruta fija del archivo Excel
+        # Fixed Excel file path
         self.excel_path = os.path.join(self.script_dir, "CONVERTIDOR.xlsx")
         
-        # Frame principal
-        self.main_frame = ttk.Frame(master)
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        # Configure style and colors
+        self.configure_style()
         
-        # Crear menú
-        self.crear_menu()
+        # Create the sidebar and main content area
+        self.create_layout()
         
-        # Sidebar y contenido principal
-        self.crear_layout()
-        
-        # Información de estado en barra inferior
-        self.crear_statusbar()
-        
-        # Mostrar mensaje de bienvenida
-        self.mostrar_mensaje_bienvenida()
+        # Show welcome message
+        self.show_welcome_message()
     
-    def load_icons(self):
-        """Cargar íconos para la interfaz"""
-        # Aquí se cargarían los íconos, pero como no tenemos acceso a archivos
-        # usaremos emojis unicode como sustitutos
-        self.icon_file = "📄"
-        self.icon_folder = "📁"
-        self.icon_process = "🚀"
-        self.icon_settings = "⚙️"
-        self.icon_info = "ℹ️"
-        self.icon_theme = "🌓"
-        self.icon_help = "❓"
-    
-    def configurar_estilo(self):
-        """Configurar estilos personalizados para la interfaz"""
+    def configure_style(self):
+        """Configure custom styles for the interface"""
         self.style = ttk.Style()
         self.style.theme_use('clam')
         
-        self.update_theme()
-    
-    def update_theme(self):
-        """Actualizar el tema claro/oscuro"""
-        # Definir colores según el tema
-        if self.is_dark_mode.get():
-            # Tema oscuro
-            self.colors = {
-                'bg': '#2d2d2d',
-                'fg': '#e0e0e0',
-                'accent': '#03a9f4',
-                'accent_dark': '#0288d1',
-                'widget_bg': '#3d3d3d',
-                'sidebar_bg': '#252525',
-                'card_bg': '#3d3d3d',
-                'input_bg': '#454545',
-                'input_fg': '#e0e0e0',
-                'header_fg': '#4fc3f7',
-                'subheader_fg': '#81d4fa',
-                'muted_fg': '#9e9e9e',
-                'success': '#4caf50',
-                'warning': '#ff9800',
-                'error': '#f44336',
-                'info': '#2196f3'
-            }
-        else:
-            # Tema claro
-            self.colors = {
-                'bg': '#f5f5f5',
-                'fg': '#212121',
-                'accent': '#1976d2',
-                'accent_dark': '#1565c0',
-                'widget_bg': '#ffffff',
-                'sidebar_bg': '#e0e0e0',
-                'card_bg': '#ffffff',
-                'input_bg': '#ffffff',
-                'input_fg': '#212121',
-                'header_fg': '#1976d2',
-                'subheader_fg': '#2196f3',
-                'muted_fg': '#757575',
-                'success': '#4caf50',
-                'warning': '#ff9800',
-                'error': '#f44336',
-                'info': '#2196f3'
-            }
+        # Define colors based on theme
+        self.update_colors()
         
-        # Aplicar colores a los estilos
+        # Configure common styles
         self.style.configure("TFrame", background=self.colors['bg'])
         self.style.configure("TLabel", background=self.colors['bg'], foreground=self.colors['fg'])
-        self.style.configure("TButton", font=('Segoe UI', 10), padding=5)
         
-        # Etiquetas
-        self.style.configure("Header.TLabel", 
-                            background=self.colors['bg'],
-                            foreground=self.colors['header_fg'],
-                            font=('Segoe UI', 16, 'bold'))
-        
-        self.style.configure("Subheader.TLabel", 
-                            background=self.colors['bg'],
-                            foreground=self.colors['subheader_fg'],
-                            font=('Segoe UI', 12, 'bold'))
-        
-        self.style.configure("Muted.TLabel", 
-                            background=self.colors['bg'],
-                            foreground=self.colors['muted_fg'],
-                            font=('Segoe UI', 9))
-        
-        # Botones
-        self.style.configure("Accent.TButton", 
-                           background=self.colors['accent'],
-                           foreground="white",
-                           font=('Segoe UI', 10, 'bold'))
-        
-        self.style.map("Accent.TButton",
-                     background=[('active', self.colors['accent_dark']), 
-                                ('pressed', self.colors['accent_dark'])])
-        
-        self.style.configure("Primary.TButton", 
-                           background=self.colors['accent'],
-                           foreground="white",
-                           padding=10,
-                           font=('Segoe UI', 12, 'bold'))
-        
-        self.style.map("Primary.TButton",
-                     background=[('active', self.colors['accent_dark']), 
-                                ('pressed', self.colors['accent_dark'])])
-        
-        # Sidebar
+        # Sidebar styles
         self.style.configure("Sidebar.TFrame", 
-                           background=self.colors['sidebar_bg'])
+                           background=self.colors['sidebar_bg'],
+                           relief="flat")
         
         self.style.configure("Sidebar.TLabel", 
                            background=self.colors['sidebar_bg'],
-                           foreground=self.colors['fg'],
-                           font=('Segoe UI', 10, 'bold'))
+                           foreground=self.colors['sidebar_fg'],
+                           font=('Arial', 10))
         
-        # Tarjetas
+        self.style.configure("SidebarTitle.TLabel", 
+                           background=self.colors['sidebar_bg'],
+                           foreground=self.colors['accent'],
+                           font=('Arial', 14, 'bold'))
+        
+        # Tab buttons in sidebar
+        self.style.configure("Tab.TButton", 
+                           font=('Arial', 11),
+                           padding=10,
+                           width=20,
+                           anchor="w")
+        
+        self.style.map("Tab.TButton",
+                     background=[('active', self.colors['sidebar_active']), 
+                                 ('selected', self.colors['sidebar_active']),
+                                 ('!active', self.colors['sidebar_bg'])],
+                     foreground=[('active', self.colors['sidebar_active_fg']), 
+                                 ('selected', self.colors['sidebar_active_fg']),
+                                 ('!active', self.colors['sidebar_fg'])])
+        
+        # Button styles
+        self.style.configure("TButton", 
+                           padding=8,
+                           font=('Arial', 10))
+        
+        self.style.configure("Primary.TButton", 
+                           font=('Arial', 11, 'bold'),
+                           padding=10,
+                           background=self.colors['accent'],
+                           foreground="#ffffff")
+        
+        self.style.map("Primary.TButton",
+                     background=[('active', self.colors['accent_dark']), ('!active', self.colors['accent'])],
+                     foreground=[('active', '#ffffff'), ('!active', '#ffffff')])
+        
+        # Content frame
+        self.style.configure("Content.TFrame", 
+                           background=self.colors['content_bg'])
+        
+        # Card frame
         self.style.configure("Card.TFrame", 
                            background=self.colors['card_bg'],
-                           relief="raised",
-                           borderwidth=1)
+                           relief="solid",
+                           borderwidth=0)
         
         # LabelFrame
         self.style.configure("TLabelframe", 
-                           background=self.colors['bg'],
-                           foreground=self.colors['fg'])
+                           background=self.colors['card_bg'],
+                           foreground=self.colors['fg'],
+                           borderwidth=0,
+                           relief="solid")
         
         self.style.configure("TLabelframe.Label", 
-                           background=self.colors['bg'],
-                           foreground=self.colors['header_fg'],
-                           font=('Segoe UI', 11, 'bold'))
+                           background=self.colors['card_bg'],
+                           foreground=self.colors['accent'],
+                           font=('Arial', 12, 'bold'))
         
-        # Entradas
+        # Section headers
+        self.style.configure("Section.TLabel", 
+                           background=self.colors['content_bg'],
+                           foreground=self.colors['accent'],
+                           font=('Arial', 14, 'bold'))
+        
+        self.style.configure("Subsection.TLabel", 
+                           background=self.colors['card_bg'],
+                           foreground=self.colors['accent'],
+                           font=('Arial', 12, 'bold'))
+        
+        # Entry
         self.style.configure("TEntry", 
-                           fieldbackground=self.colors['input_bg'],
-                           foreground=self.colors['input_fg'])
+                           padding=8,
+                           fieldbackground=self.colors['input_bg'])
         
         # Combobox
         self.style.configure("TCombobox", 
-                           fieldbackground=self.colors['input_bg'],
-                           background=self.colors['widget_bg'],
-                           foreground=self.colors['input_fg'])
+                           padding=8,
+                           fieldbackground=self.colors['input_bg'])
         
-        # Progressbar
+        # Footer
+        self.style.configure("Footer.TFrame", 
+                           background=self.colors['sidebar_bg'])
+        
+        self.style.configure("Footer.TLabel", 
+                           background=self.colors['sidebar_bg'],
+                           foreground=self.colors['muted_fg'],
+                           font=('Arial', 9))
+        
+        # Progress bar
         self.style.configure("Horizontal.TProgressbar", 
                            background=self.colors['accent'],
                            troughcolor=self.colors['widget_bg'])
         
-        # Actualizar colores de fondo de la ventana principal
-        self.master.configure(background=self.colors['bg'])
+        # Icon buttons
+        self.style.configure("Icon.TButton", 
+                          padding=4,
+                          font=('Arial', 12),
+                          background=self.colors['sidebar_bg'],
+                          foreground=self.colors['sidebar_fg'])
         
-        # Actualizar widgets si ya existen
-        if hasattr(self, 'main_frame'):
-            self.main_frame.configure(style="TFrame")
-            self.update_all_widgets()
+        self.style.map("Icon.TButton",
+                    background=[('active', self.colors['sidebar_active']), ('!active', self.colors['sidebar_bg'])],
+                    foreground=[('active', self.colors['sidebar_active_fg']), ('!active', self.colors['sidebar_fg'])])
     
-    def update_all_widgets(self):
-        """Actualizar todos los widgets con el nuevo tema"""
-        # Aquí actualizaríamos manualmente los widgets importantes
-        # que necesiten cambios específicos para el tema
-        
-        # Actualizar el área de log
-        if hasattr(self, 'log_area'):
-            bg_color = self.colors['input_bg']
-            fg_color = self.colors['input_fg']
-            self.log_area.config(bg=bg_color, fg=fg_color)
+    def update_colors(self):
+        """Update color scheme based on theme"""
+        if self.is_dark_mode.get():
+            # Dark theme
+            self.colors = {
+                'bg': '#1e1e1e',
+                'fg': '#f0f0f0',
+                'accent': '#3498db',
+                'accent_dark': '#2980b9',
+                'sidebar_bg': '#252526',
+                'sidebar_fg': '#cccccc',
+                'sidebar_active': '#37373d',
+                'sidebar_active_fg': '#ffffff',
+                'content_bg': '#1e1e1e',
+                'widget_bg': '#333333',
+                'card_bg': '#2d2d2d',
+                'input_bg': '#3c3c3c',
+                'input_fg': '#f0f0f0',
+                'muted_fg': '#888888',
+                'success': '#27ae60',
+                'warning': '#f39c12',
+                'error': '#e74c3c',
+                'info': '#3498db',
+                'border': '#3d3d3d'
+            }
+        else:
+            # Light theme
+            self.colors = {
+                'bg': '#f5f5f5',
+                'fg': '#333333',
+                'accent': '#2980b9',
+                'accent_dark': '#1c6ca1',
+                'sidebar_bg': '#2c3e50',
+                'sidebar_fg': '#ecf0f1',
+                'sidebar_active': '#34495e',
+                'sidebar_active_fg': '#ffffff',
+                'content_bg': '#f5f5f5',
+                'widget_bg': '#ffffff',
+                'card_bg': '#ffffff',
+                'input_bg': '#ffffff',
+                'input_fg': '#333333',
+                'muted_fg': '#95a5a6',
+                'success': '#27ae60',
+                'warning': '#f39c12',
+                'error': '#e74c3c',
+                'info': '#3498db',
+                'border': '#e0e0e0'
+            }
     
-    def crear_menu(self):
-        """Crear menú superior"""
-        menu_bar = tk.Menu(self.master)
-        self.master.config(menu=menu_bar)
+    def create_layout(self):
+        """Create the main layout with sidebar and content area"""
+        # Main container with paned window
+        self.main_container = tk.PanedWindow(self.master, orient=tk.HORIZONTAL, 
+                                            background=self.colors['bg'],
+                                            sashwidth=4, sashpad=0, 
+                                            sashrelief=tk.FLAT)
+        self.main_container.pack(fill=tk.BOTH, expand=True)
         
-        # Menú Archivo
-        file_menu = tk.Menu(menu_bar, tearoff=0)
-        menu_bar.add_cascade(label="Archivo", menu=file_menu)
-        file_menu.add_command(label="Seleccionar DXF", command=self.select_dxf_file)
-        file_menu.add_command(label="Seleccionar Carpeta de Salida", command=self.select_output_directory)
-        file_menu.add_separator()
-        file_menu.add_command(label="Salir", command=self.master.quit)
+        # Create sidebar
+        self.sidebar = ttk.Frame(self.main_container, style="Sidebar.TFrame")
+        self.main_container.add(self.sidebar, width=220)
         
-        # Menú Procesar
-        process_menu = tk.Menu(menu_bar, tearoff=0)
-        menu_bar.add_cascade(label="Procesar", menu=process_menu)
-        process_menu.add_command(label="Procesar Prelosas", command=self.process_dxf)
+        # Create content area
+        self.content_area = ttk.Frame(self.main_container, style="Content.TFrame", padding=15)
+        self.main_container.add(self.content_area, width=700)
         
-        # Menú Ver
-        view_menu = tk.Menu(menu_bar, tearoff=0)
-        menu_bar.add_cascade(label="Ver", menu=view_menu)
-        view_menu.add_checkbutton(label="Modo Oscuro", variable=self.is_dark_mode, 
-                                command=self.update_theme)
+        # Fill sidebar with navigation
+        self.create_sidebar()
         
-        # Menú Ayuda
-        help_menu = tk.Menu(menu_bar, tearoff=0)
-        menu_bar.add_cascade(label="Ayuda", menu=help_menu)
-        help_menu.add_command(label="Acerca de", command=self.show_about)
-        help_menu.add_command(label="Documentación", command=self.show_documentation)
+        # Create content frames for each section but only show the first one
+        self.create_content_frames()
+        self.show_frame('procesamiento')
     
-    def crear_layout(self):
-        """Crear layout principal con sidebar y contenido"""
-        # Panel principal con dos columnas
-        self.paned_window = ttk.PanedWindow(self.main_frame, orient=tk.HORIZONTAL)
-        self.paned_window.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+    def create_sidebar(self):
+        """Create the sidebar with navigation and branding"""
+        # Branding header
+        header_frame = ttk.Frame(self.sidebar, style="Sidebar.TFrame")
+        header_frame.pack(fill=tk.X, padx=15, pady=20)
         
-        # Sidebar izquierdo
-        self.sidebar_frame = ttk.Frame(self.paned_window, style="Sidebar.TFrame", width=200)
-        self.paned_window.add(self.sidebar_frame, weight=1)
+        # Title
+        title_label = ttk.Label(
+            header_frame, 
+            text="ACERO SCRIPT", 
+            style="SidebarTitle.TLabel"
+        )
+        title_label.pack(anchor=tk.W)
         
-        # Contenido principal
-        self.content_frame = ttk.Frame(self.paned_window)
-        self.paned_window.add(self.content_frame, weight=4)
+        subtitle_label = ttk.Label(
+            header_frame, 
+            text="Automatización de Prelosas", 
+            style="Sidebar.TLabel"
+        )
+        subtitle_label.pack(anchor=tk.W, pady=(5, 0))
         
-        # Llenar el sidebar
-        self.crear_sidebar()
+        # Separator
+        separator = ttk.Separator(self.sidebar, orient='horizontal')
+        separator.pack(fill=tk.X, padx=15, pady=15)
         
-        # Llenar el contenido
-        self.crear_contenido()
+        # Navigation buttons
+        nav_frame = ttk.Frame(self.sidebar, style="Sidebar.TFrame")
+        nav_frame.pack(fill=tk.X, padx=5, pady=10)
+        
+        # Navigation buttons using TButton with Tab style
+        self.selected_tab = tk.StringVar(value="procesamiento")
+        
+        procesamiento_btn = ttk.Button(
+            nav_frame,
+            text="📄 Procesamiento",
+            command=lambda: self.show_frame('procesamiento'),
+            style="Tab.TButton"
+        )
+        procesamiento_btn.pack(fill=tk.X, pady=2)
+        
+        configuracion_btn = ttk.Button(
+            nav_frame,
+            text="⚙️ Configuración",
+            command=lambda: self.show_frame('configuracion'),
+            style="Tab.TButton"
+        )
+        configuracion_btn.pack(fill=tk.X, pady=2)
+        
+        log_btn = ttk.Button(
+            nav_frame,
+            text="📋 Registro",
+            command=lambda: self.show_frame('log'),
+            style="Tab.TButton"
+        )
+        log_btn.pack(fill=tk.X, pady=2)
+        
+        # Store references to buttons for handling selection state
+        self.nav_buttons = {
+            'procesamiento': procesamiento_btn,
+            'configuracion': configuracion_btn,
+            'log': log_btn
+        }
+        
+        # Actions section in sidebar - Create a small frame for toolbar buttons
+        actions_frame = ttk.Frame(self.sidebar, style="Sidebar.TFrame")
+        actions_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=15)
+        
+        # Theme toggle button
+        self.theme_text = tk.StringVar(value="🌙" if not self.is_dark_mode.get() else "☀️")
+        theme_button = ttk.Button(
+            actions_frame,
+            textvariable=self.theme_text,
+            command=self.toggle_theme,
+            style="Icon.TButton",
+            width=3
+        )
+        theme_button.pack(side=tk.LEFT, padx=5)
+        
+        # Help button
+        help_button = ttk.Button(
+            actions_frame,
+            text="❓",
+            command=self.show_documentation,
+            style="Icon.TButton",
+            width=3
+        )
+        help_button.pack(side=tk.LEFT, padx=5)
+        
+        # About button
+        about_button = ttk.Button(
+            actions_frame,
+            text="ℹ️",
+            command=self.show_about,
+            style="Icon.TButton",
+            width=3
+        )
+        about_button.pack(side=tk.LEFT, padx=5)
+        
+        # Version info at the bottom
+        version_label = ttk.Label(
+            self.sidebar,
+            text="v1.0.0 • DODOD SOLUTIONS",
+            style="Footer.TLabel"
+        )
+        version_label.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=10)
     
-    def crear_sidebar(self):
-        """Crear sidebar con enlaces rápidos"""
-        # Logo o título en la parte superior
-        header_frame = ttk.Frame(self.sidebar_frame, style="Sidebar.TFrame")
-        header_frame.pack(fill=tk.X, pady=(15, 20))
+    def create_content_frames(self):
+        """Create frames for each content section"""
+        self.frames = {}
         
-        logo_label = ttk.Label(header_frame, 
-                             text="ACERO SCRIPT", 
-                             style="Header.TLabel",
-                             background=self.colors['sidebar_bg'],
-                             foreground=self.colors['header_fg'])
-        logo_label.pack(pady=(5, 0))
+        # Procesamiento content
+        procesamiento_frame = ttk.Frame(self.content_area, style="Content.TFrame")
+        self.create_procesamiento_content(procesamiento_frame)
+        self.frames['procesamiento'] = procesamiento_frame
         
-        # Separador
-        separator = ttk.Separator(self.sidebar_frame, orient='horizontal')
-        separator.pack(fill=tk.X, padx=15, pady=5)
+        # Configuracion content
+        configuracion_frame = ttk.Frame(self.content_area, style="Content.TFrame")
+        self.create_configuracion_content(configuracion_frame)
+        self.frames['configuracion'] = configuracion_frame
         
-        # Lista de acciones rápidas
-        actions_frame = ttk.Frame(self.sidebar_frame, style="Sidebar.TFrame")
-        actions_frame.pack(fill=tk.X, padx=10, pady=5)
-        
-        # Estilo para botones de sidebar
-        self.style.configure("Sidebar.TButton", 
-                           font=('Segoe UI', 10),
-                           padding=10,
-                           background=self.colors['sidebar_bg'])
-        
-        ttk.Button(actions_frame, 
-                  text=f"{self.icon_file} Seleccionar DXF", 
-                  style="Sidebar.TButton", 
-                  command=self.select_dxf_file).pack(fill=tk.X, pady=3)
-        
-        ttk.Button(actions_frame, 
-                  text=f"{self.icon_folder} Carpeta de Salida", 
-                  style="Sidebar.TButton", 
-                  command=self.select_output_directory).pack(fill=tk.X, pady=3)
-        
-        ttk.Button(actions_frame, 
-                  text=f"{self.icon_process} Procesar Prelosas", 
-                  style="Sidebar.TButton", 
-                  command=self.process_dxf).pack(fill=tk.X, pady=3)
-        
-        ttk.Button(actions_frame, 
-                  text=f"{self.icon_theme} Cambiar Tema", 
-                  style="Sidebar.TButton", 
-                  command=self.toggle_theme).pack(fill=tk.X, pady=3)
-        
-        ttk.Button(actions_frame, 
-                  text=f"{self.icon_help} Ayuda", 
-                  style="Sidebar.TButton", 
-                  command=self.show_documentation).pack(fill=tk.X, pady=3)
-        
-        # Información del software en la parte inferior
-        info_frame = ttk.Frame(self.sidebar_frame, style="Sidebar.TFrame")
-        info_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=15)
-        
-        version_label = ttk.Label(info_frame, 
-                                text="Versión 1.0.0", 
-                                style="Muted.TLabel",
-                                background=self.colors['sidebar_bg'])
-        version_label.pack()
-        
-        company_label = ttk.Label(info_frame, 
-                                text="DODOD SOLUTIONS", 
-                                style="Muted.TLabel",
-                                background=self.colors['sidebar_bg'])
-        company_label.pack()
+        # Log content
+        log_frame = ttk.Frame(self.content_area, style="Content.TFrame")
+        self.create_log_content(log_frame)
+        self.frames['log'] = log_frame
     
-    def crear_contenido(self):
-        """Crear contenido principal"""
-        # Frame para el contenido con padding
-        content_inner = ttk.Frame(self.content_frame)
-        content_inner.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+    def show_frame(self, frame_id):
+        """Show the selected content frame and hide others"""
+        # Update button states
+        for key, button in self.nav_buttons.items():
+            if key == frame_id:
+                button.state(['selected'])
+            else:
+                button.state(['!selected'])
         
-        # Cabecera
-        header_frame = ttk.Frame(content_inner, style="Card.TFrame")
-        header_frame.pack(fill=tk.X, pady=(0, 15))
+        # Hide all frames
+        for frame in self.frames.values():
+            frame.pack_forget()
         
-        header_label = ttk.Label(header_frame, 
-                               text="Automatización de Aceros en Prelosas", 
-                               style="Header.TLabel",
-                               padding=(15, 10))
-        header_label.pack()
+        # Show selected frame
+        self.frames[frame_id].pack(fill=tk.BOTH, expand=True)
         
-        # Crear un frame con columnas para la disposición de paneles
-        panels_frame = ttk.Frame(content_inner)
-        panels_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Columna izquierda para archivos y configuración
-        left_column = ttk.Frame(panels_frame)
-        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
-        
-        # Columna derecha para progreso, acción y registro
-        right_column = ttk.Frame(panels_frame)
-        right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
-        
-        # Panel de archivos (columna izquierda)
-        self.crear_panel_archivos(left_column)
-        
-        # Panel de configuración (columna izquierda)
-        self.crear_panel_configuracion(left_column)
-        
-        # Barra de progreso (columna derecha)
-        self.crear_barra_progreso(right_column)
-        
-        # Panel de acción (columna derecha)
-        self.crear_panel_accion(right_column)
-        
-        # Panel de registro (columna derecha)
-        self.crear_panel_registro(right_column)
+        # Update selected tab variable
+        self.selected_tab.set(frame_id)
     
-    def crear_panel_archivos(self, parent):
-        """Crear panel de selección de archivos"""
-        file_panel = ttk.LabelFrame(parent, text="Selección de Archivos", padding=15)
-        file_panel.pack(fill=tk.X, pady=(0, 15))
+    def create_procesamiento_content(self, parent):
+        """Create the processing content"""
+        # Section title
+        ttk.Label(
+            parent,
+            text="Procesamiento de Archivos",
+            style="Section.TLabel"
+        ).pack(anchor=tk.W, pady=(0, 15))
         
-        # Grid para los campos
-        file_frame = ttk.Frame(file_panel)
-        file_frame.pack(fill=tk.X)
+        # File selection card
+        file_card = ttk.Frame(parent, style="Card.TFrame", padding=20)
+        file_card.pack(fill=tk.X, pady=(0, 15))
         
-        # DXF File
-        ttk.Label(file_frame, text=f"{self.icon_file} Archivo DXF:").grid(
-            row=0, column=0, sticky='w', padx=(0,10), pady=8)
+        # Card title
+        ttk.Label(
+            file_card,
+            text="Selección de Archivos",
+            style="Subsection.TLabel"
+        ).pack(anchor=tk.W, pady=(0, 15))
+        
+        # DXF File Row
+        file_frame = ttk.Frame(file_card, style="Card.TFrame")
+        file_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(file_frame, text="Archivo DXF:", width=15).pack(side=tk.LEFT)
         
         self.dxf_path = tk.StringVar()
-        self.dxf_entry = ttk.Entry(file_frame, textvariable=self.dxf_path, width=60)
-        self.dxf_entry.grid(row=0, column=1, padx=5, pady=8, sticky='ew')
+        self.dxf_entry = ttk.Entry(file_frame, textvariable=self.dxf_path)
+        self.dxf_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
-        ttk.Button(file_frame, text="Buscar", 
-                  style="Accent.TButton",
-                  command=self.select_dxf_file).grid(row=0, column=2, padx=5, pady=8)
+        browse_dxf_button = ttk.Button(
+            file_frame, 
+            text="Explorar", 
+            command=self.select_dxf_file
+        )
+        browse_dxf_button.pack(side=tk.LEFT, padx=(5, 0))
         
-        # Excel File (Fixed)
-        ttk.Label(file_frame, text=f"{self.icon_file} Archivo Excel:").grid(
-            row=1, column=0, sticky='w', padx=(0,10), pady=8)
+        # Excel File Row (fixed)
+        excel_frame = ttk.Frame(file_card, style="Card.TFrame")
+        excel_frame.pack(fill=tk.X, pady=5)
         
-        self.excel_entry = ttk.Entry(file_frame, width=60, state='readonly')
-        self.excel_entry.grid(row=1, column=1, padx=5, pady=8, sticky='ew')
+        ttk.Label(excel_frame, text="Archivo Excel:", width=15).pack(side=tk.LEFT)
+        
+        self.excel_entry = ttk.Entry(excel_frame, state='readonly')
+        self.excel_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         self.excel_entry.insert(0, "CONVERTIDOR.xlsx (Predeterminado)")
         
-        # Output Directory
-        ttk.Label(file_frame, text=f"{self.icon_folder} Directorio de Salida:").grid(
-            row=2, column=0, sticky='w', padx=(0,10), pady=8)
+        # Output Directory Row
+        output_frame = ttk.Frame(file_card, style="Card.TFrame")
+        output_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(output_frame, text="Directorio Salida:", width=15).pack(side=tk.LEFT)
         
         self.output_path = tk.StringVar()
-        self.output_entry = ttk.Entry(file_frame, textvariable=self.output_path, width=60)
-        self.output_entry.grid(row=2, column=1, padx=5, pady=8, sticky='ew')
+        self.output_entry = ttk.Entry(output_frame, textvariable=self.output_path)
+        self.output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
-        ttk.Button(file_frame, text="Seleccionar", 
-                  style="Accent.TButton",
-                  command=self.select_output_directory).grid(row=2, column=2, padx=5, pady=8)
+        browse_output_button = ttk.Button(
+            output_frame, 
+            text="Explorar", 
+            command=self.select_output_directory
+        )
+        browse_output_button.pack(side=tk.LEFT, padx=(5, 0))
         
-        # Expandir columna central
-        file_frame.columnconfigure(1, weight=1)
+        # Processing card
+        process_card = ttk.Frame(parent, style="Card.TFrame", padding=20)
+        process_card.pack(fill=tk.X, pady=15)
+        
+        # Card title
+        ttk.Label(
+            process_card,
+            text="Estado del Procesamiento",
+            style="Subsection.TLabel"
+        ).pack(anchor=tk.W, pady=(0, 15))
+        
+        # Progress bar
+        self.progress_var = tk.DoubleVar()
+        self.progress_bar = ttk.Progressbar(
+            process_card, 
+            orient=tk.HORIZONTAL, 
+            length=100, 
+            mode='determinate',
+            variable=self.progress_var
+        )
+        self.progress_bar.pack(fill=tk.X)
+        
+        # Status label
+        self.status_label = ttk.Label(
+            process_card, 
+            text="Listo para procesar", 
+            anchor=tk.CENTER,
+            background=self.colors['card_bg']
+        )
+        self.status_label.pack(fill=tk.X, pady=(5, 15))
+        
+        # Process button
+        self.process_button = ttk.Button(
+            process_card, 
+            text="PROCESAR PRELOSAS",
+            style="Primary.TButton",
+            command=self.process_dxf
+        )
+        self.process_button.pack(pady=(0, 5))
     
-    def crear_panel_configuracion(self, parent):
-        """Crear panel de configuración de valores predeterminados"""
-        config_panel = ttk.LabelFrame(parent, text="Configuración de Valores Predeterminados", padding=15)
-        config_panel.pack(fill=tk.X, pady=(0, 15))
+    def create_configuracion_content(self, parent):
+        """Create the configuration content"""
+        # Section title
+        ttk.Label(
+            parent,
+            text="Configuración de Tipos de Prelosa",
+            style="Section.TLabel"
+        ).pack(anchor=tk.W, pady=(0, 15))
         
-        # Variables para almacenar los valores predeterminados
+        # Description
+        ttk.Label(
+            parent,
+            text="Configure los espaciamientos y tipos de acero predeterminados para cada tipo de prelosa",
+            background=self.colors['content_bg']
+        ).pack(anchor=tk.W, pady=(0, 15))
+        
+        # Variables to store default values
         self.default_values = {
             'PRELOSA MACIZA': {
                 'espaciamiento': tk.StringVar(value='0.20'),
@@ -435,14 +510,6 @@ class DXFProcessorApp:
                 'espaciamiento': tk.StringVar(value='0.15'),
                 'acero': tk.StringVar(value='3/8"')
             },
-            'PRELOSA MACIZA TIPO 3': {
-                'espaciamiento': tk.StringVar(value='0.20'),
-                'acero': tk.StringVar(value='3/8"')
-            },
-            'PRELOSA MACIZA TIPO 4': {
-                'espaciamiento': tk.StringVar(value='0.20'),
-                'acero': tk.StringVar(value='3/8"')
-            },
             'PRELOSA ALIGERADA 20': {
                 'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
@@ -450,349 +517,216 @@ class DXFProcessorApp:
             'PRELOSA ALIGERADA 20 - 2 SENT': {
                 'espaciamiento': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
-            },
-            'PRELOSA ALIGERADA 25': {
-                'espaciamiento': tk.StringVar(value='0.20'),
-                'acero': tk.StringVar(value='3/8"')
             }
-            # ... resto de tipos predefinidos ...
         }
         
-        # Lista dinámica para almacenar todos los tipos de prelosa (predefinidos + personalizados)
+        # List to store all prelosa types (predefined + custom)
         self.tipos_prelosa = [
             'PRELOSA MACIZA', 
             'PRELOSA MACIZA 15',
-            'PRELOSA MACIZA TIPO 3',
-            'PRELOSA MACIZA TIPO 4',
             'PRELOSA ALIGERADA 20', 
-            'PRELOSA ALIGERADA 20 - 2 SENT',
-            'PRELOSA ALIGERADA 25',
-            'PRELOSA ALIGERADA 25 - 2 SENT',
-            'PRELOSA ALIGERADA 30',
-            'PRELOSA ALIGERADA 30 - 2 SENT'
+            'PRELOSA ALIGERADA 20 - 2 SENT'
         ]
         
-        # Opciones de acero disponibles
+        # Available steel options
         self.acero_opciones = ['6mm', '8mm', '3/8"', '12mm', '1/2"', '5/8"', '3/4"', '1']
         
-        # Crear notebook para las configuraciones
-        notebook = ttk.Notebook(config_panel)
-        notebook.pack(fill=tk.X, padx=5, pady=5)
+        # Table container (card style)
+        self.config_card = ttk.Frame(parent, style="Card.TFrame", padding=20)
+        self.config_card.pack(fill=tk.BOTH, expand=True)
         
-        # Pestaña general
-        general_tab = ttk.Frame(notebook)
-        notebook.add(general_tab, text="General")
+        # Headers
+        headers_frame = ttk.Frame(self.config_card, style="Card.TFrame")
+        headers_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Añadir scrollable frame para la tabla de configuración
-        # Primero, un canvas para el scrolling
-        canvas = tk.Canvas(general_tab, height=250)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        ttk.Label(
+            headers_frame, 
+            text="Tipo de Prelosa",
+            font=('Arial', 11, 'bold'),
+            background=self.colors['card_bg'],
+            foreground=self.colors['accent'],
+            width=30
+        ).grid(row=0, column=0, padx=(0, 15), sticky='w')
         
-        # Scrollbar vertical
-        vsb = ttk.Scrollbar(general_tab, orient="vertical", command=canvas.yview)
-        vsb.pack(side=tk.RIGHT, fill=tk.Y)
-        canvas.configure(yscrollcommand=vsb.set)
+        ttk.Label(
+            headers_frame, 
+            text="Espaciamiento",
+            font=('Arial', 11, 'bold'),
+            background=self.colors['card_bg'],
+            foreground=self.colors['accent'],
+            width=15
+        ).grid(row=0, column=1, padx=5, sticky='w')
         
-        # Frame que contiene los widgets de configuración
-        self.config_frame = ttk.Frame(canvas)
-        canvas.create_window((0, 0), window=self.config_frame, anchor=tk.NW)
+        ttk.Label(
+            headers_frame, 
+            text="Acero",
+            font=('Arial', 11, 'bold'),
+            background=self.colors['card_bg'],
+            foreground=self.colors['accent'],
+            width=10
+        ).grid(row=0, column=2, padx=5, sticky='w')
         
-        # Cabeceras de tabla
-        ttk.Label(self.config_frame, text="Tipo de Prelosa", font=('Segoe UI', 10, 'bold')).grid(
-            row=0, column=0, sticky='w', padx=10, pady=(0, 10))
+        ttk.Label(
+            headers_frame, 
+            text="Acciones",
+            font=('Arial', 11, 'bold'),
+            background=self.colors['card_bg'],
+            foreground=self.colors['accent'],
+            width=10
+        ).grid(row=0, column=3, padx=5, sticky='w')
         
-        ttk.Label(self.config_frame, text="Espaciamiento", font=('Segoe UI', 10, 'bold')).grid(
-            row=0, column=1, sticky='w', padx=10, pady=(0, 10))
+        # Separator
+        separator = ttk.Separator(self.config_card, orient='horizontal')
+        separator.pack(fill=tk.X, pady=(0, 10))
         
-        ttk.Label(self.config_frame, text="Acero", font=('Segoe UI', 10, 'bold')).grid(
-            row=0, column=2, sticky='w', padx=10, pady=(0, 10))
+        # Scrollable container for types
+        container_frame = ttk.Frame(self.config_card, style="Card.TFrame")
+        container_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Columna para botón Eliminar (para tipos personalizados)
-        ttk.Label(self.config_frame, text="Acciones", font=('Segoe UI', 10, 'bold')).grid(
-            row=0, column=3, sticky='w', padx=10, pady=(0, 10))
+        # Canvas for scrolling
+        self.canvas = tk.Canvas(container_frame, background=self.colors['card_bg'], 
+                               highlightthickness=0, height=300)
+        scrollbar = ttk.Scrollbar(container_frame, orient="vertical", command=self.canvas.yview)
         
-        # Separador horizontal
-        separator = ttk.Separator(self.config_frame, orient='horizontal')
-        separator.grid(row=1, column=0, columnspan=4, sticky='ew', pady=(0, 10))
+        # Create a frame inside the canvas to hold the types
+        self.tipos_frame = ttk.Frame(self.canvas, style="Card.TFrame")
         
-        # Llenar la tabla con los tipos predefinidos
-        self.render_prelosa_table()
+        # Configure canvas scrolling
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        # Botón para agregar nuevo tipo de prelosa
-        add_frame = ttk.Frame(self.config_frame)
-        add_frame.grid(row=len(self.tipos_prelosa)+2, column=0, columnspan=4, sticky='ew', pady=10)
+        # Create window inside canvas
+        canvas_window = self.canvas.create_window((0, 0), window=self.tipos_frame, anchor=tk.NW)
         
+        # Update scroll region when frame changes
+        def update_scroll_region(event):
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+            # Adjust the width of the window to fill the canvas
+            self.canvas.itemconfig(canvas_window, width=self.canvas.winfo_width())
+        
+        self.tipos_frame.bind("<Configure>", update_scroll_region)
+        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfig(canvas_window, width=e.width))
+        
+        # Render initial types
+        self.render_prelosa_types()
+        
+        # Add button
         add_button = ttk.Button(
-            add_frame, 
+            self.config_card, 
             text="+ AGREGAR TIPO DE PRELOSA",
-            style="Accent.TButton",
+            style="Primary.TButton",
             command=self.add_new_prelosa_type
         )
-        add_button.pack(pady=5)
+        add_button.pack(pady=15)
+    
+    def render_prelosa_types(self):
+        """Render the prelosa types in the configuration tab"""
+        # Clear all existing widgets
+        for widget in self.tipos_frame.winfo_children():
+            widget.destroy()
         
-        # Actualizar tamaño del canvas basado en su contenido
-        def _configure_canvas(event):
-            # Actualizar el scrollregion para que incluya todo el contenido
-            canvas.configure(scrollregion=canvas.bbox("all"))
-            canvas_width = event.width
-            canvas.itemconfig(canvas_window, width=canvas_width)
-        
-        canvas_window = canvas.create_window((0, 0), window=self.config_frame, anchor="nw")
-        self.config_frame.bind("<Configure>", _configure_canvas)
-        canvas.bind("<Configure>", _configure_canvas)
-        
-        # Asegurar que el canvas tenga un tamaño razonable
-        canvas.update_idletasks()
-        canvas.config(width=500)
-
-    def render_prelosa_table(self):
-        """Renderiza la tabla de tipos de prelosa con sus valores"""
-        # Limpiar widgets existentes a partir de la fila 2
-        for widget in self.config_frame.grid_slaves():
-            if int(widget.grid_info()["row"]) >= 2:
-                widget.grid_forget()
-        
-        # Crear campos para cada tipo con diseño de tabla
+        # Create a row for each type
         for idx, tipo in enumerate(self.tipos_prelosa):
-            # Si es un tipo personalizado, puede que no esté en default_values
-            if tipo not in self.default_values:
-                self.default_values[tipo] = {
-                    'espaciamiento': tk.StringVar(value='0.20'),
-                    'acero': tk.StringVar(value='3/8"')
-                }
+            # Create a row frame
+            row_frame = ttk.Frame(self.tipos_frame, style="Card.TFrame")
+            row_frame.pack(fill=tk.X, pady=5)
             
-            # Etiqueta del tipo de prelosa
-            ttk.Label(self.config_frame, text=tipo).grid(
-                row=idx+2, column=0, sticky='w', padx=10, pady=8)
+            # Background color alternating
+            bg_color = self.colors['card_bg']
             
-            # Campo de entrada para espaciamiento
-            entry = ttk.Entry(
-                self.config_frame, 
-                textvariable=self.default_values[tipo]['espaciamiento'], 
+            # Type name
+            ttk.Label(
+                row_frame, 
+                text=tipo,
+                background=bg_color,
+                width=30
+            ).grid(row=0, column=0, padx=(0, 15), sticky='w')
+            
+            # Spacing entry
+            spacing_entry = ttk.Entry(
+                row_frame, 
+                textvariable=self.default_values[tipo]['espaciamiento'],
                 width=15
             )
-            entry.grid(row=idx+2, column=1, sticky='w', padx=10, pady=8)
+            spacing_entry.grid(row=0, column=1, padx=5, sticky='w')
             
-            # ComboBox para selección de acero
-            acero_combo = ttk.Combobox(
-                self.config_frame,
+            # Steel combobox
+            steel_combo = ttk.Combobox(
+                row_frame,
                 textvariable=self.default_values[tipo]['acero'],
                 values=self.acero_opciones,
                 width=10,
                 state="readonly"
             )
-            acero_combo.grid(row=idx+2, column=2, sticky='w', padx=10, pady=8)
+            steel_combo.grid(row=0, column=2, padx=5, sticky='w')
             
-            # Botón de eliminar (solo para tipos personalizados)
-            if tipo not in ['PRELOSA MACIZA', 'PRELOSA MACIZA 15', 'PRELOSA MACIZA TIPO 3', 'PRELOSA MACIZA TIPO 4',
-                            'PRELOSA ALIGERADA 20', 'PRELOSA ALIGERADA 20 - 2 SENT', 'PRELOSA ALIGERADA 25',
-                            'PRELOSA ALIGERADA 25 - 2 SENT', 'PRELOSA ALIGERADA 30', 'PRELOSA ALIGERADA 30 - 2 SENT']:
+            # Delete button (only for custom types)
+            predefined_types = [
+                'PRELOSA MACIZA', 'PRELOSA MACIZA 15',
+                'PRELOSA ALIGERADA 20', 'PRELOSA ALIGERADA 20 - 2 SENT'
+            ]
+            
+            if tipo not in predefined_types:
                 delete_button = ttk.Button(
-                    self.config_frame,
+                    row_frame,
                     text="Eliminar",
                     command=lambda t=tipo: self.delete_prelosa_type(t)
                 )
-                delete_button.grid(row=idx+2, column=3, padx=10, pady=8)
-        
-        # Botón para agregar nuevo tipo de prelosa
-        add_frame = ttk.Frame(self.config_frame)
-        add_frame.grid(row=len(self.tipos_prelosa)+2, column=0, columnspan=4, sticky='ew', pady=10)
-        
-        add_button = ttk.Button(
-            add_frame, 
-            text="+ AGREGAR TIPO DE PRELOSA",
-            style="Accent.TButton",
-            command=self.add_new_prelosa_type
-        )
-        add_button.pack(pady=5)
-
-    def add_new_prelosa_type(self):
-        """Muestra un diálogo para agregar un nuevo tipo de prelosa"""
-        # Crear ventana de diálogo
-        dialog = tk.Toplevel(self.master)
-        dialog.title("Agregar Nuevo Tipo de Prelosa")
-        dialog.geometry("400x200")
-        dialog.resizable(False, False)
-        dialog.transient(self.master)
-        dialog.grab_set()
-        
-        # Configurar como modal
-        dialog.focus_set()
-        
-        # Contenido
-        content_frame = ttk.Frame(dialog, padding=20)
-        content_frame.pack(fill=tk.BOTH, expand=True)
-        
-        # Nombre del tipo
-        ttk.Label(content_frame, text="Nombre del tipo de prelosa:").grid(
-            row=0, column=0, sticky='w', pady=(0, 10))
-        
-        nombre_var = tk.StringVar()
-        nombre_entry = ttk.Entry(content_frame, textvariable=nombre_var, width=30)
-        nombre_entry.grid(row=0, column=1, sticky='w', padx=(10, 0), pady=(0, 10))
-        nombre_entry.focus()
-        
-        # Espaciamiento
-        ttk.Label(content_frame, text="Espaciamiento predeterminado:").grid(
-            row=1, column=0, sticky='w', pady=(0, 10))
-        
-        espaciamiento_var = tk.StringVar(value="0.20")
-        espaciamiento_entry = ttk.Entry(content_frame, textvariable=espaciamiento_var, width=10)
-        espaciamiento_entry.grid(row=1, column=1, sticky='w', padx=(10, 0), pady=(0, 10))
-        
-        # Acero
-        ttk.Label(content_frame, text="Acero predeterminado:").grid(
-            row=2, column=0, sticky='w', pady=(0, 10))
-        
-        acero_var = tk.StringVar(value="3/8\"")
-        acero_combo = ttk.Combobox(
-            content_frame,
-            textvariable=acero_var,
-            values=self.acero_opciones,
-            width=10,
-            state="readonly"
-        )
-        acero_combo.grid(row=2, column=1, sticky='w', padx=(10, 0), pady=(0, 10))
-        
-        # Botones
-        button_frame = ttk.Frame(content_frame)
-        button_frame.grid(row=3, column=0, columnspan=2, pady=(10, 0))
-        
-        def add_type():
-            nombre = nombre_var.get().strip().upper()
-            if not nombre:
-                messagebox.showerror("Error", "Debe ingresar un nombre para el tipo de prelosa")
-                return
+                delete_button.grid(row=0, column=3, padx=5, sticky='w')
             
-            # Verificar si ya existe
-            if nombre in self.tipos_prelosa:
-                messagebox.showerror("Error", "Ya existe un tipo de prelosa con ese nombre")
-                return
-            
-            # Agregar nuevo tipo
-            self.tipos_prelosa.append(nombre)
-            self.default_values[nombre] = {
-                'espaciamiento': tk.StringVar(value=espaciamiento_var.get()),
-                'acero': tk.StringVar(value=acero_var.get())
-            }
-            
-            # Actualizar tabla
-            self.render_prelosa_table()
-            
-            # Cerrar diálogo
-            dialog.destroy()
-            
-            # Mensaje de éxito
-            self.add_to_log(f"Se agregó el tipo de prelosa: {nombre}", "success")
-        
-        ttk.Button(
-            button_frame,
-            text="Agregar",
-            style="Accent.TButton",
-            command=add_type
-        ).pack(side=tk.LEFT, padx=5)
-        
-        ttk.Button(
-            button_frame,
-            text="Cancelar",
-            command=dialog.destroy
-        ).pack(side=tk.LEFT, padx=5)
-
-    def delete_prelosa_type(self, tipo):
-        """Elimina un tipo de prelosa personalizado"""
-        # Confirmar eliminación
-        if messagebox.askyesno("Confirmar eliminación", 
-                            f"¿Está seguro de eliminar el tipo de prelosa '{tipo}'?"):
-            # Eliminar de la lista y del diccionario
-            self.tipos_prelosa.remove(tipo)
-            if tipo in self.default_values:
-                del self.default_values[tipo]
-            
-            # Actualizar tabla
-            self.render_prelosa_table()
-            
-            # Mensaje de éxito
-            self.add_to_log(f"Se eliminó el tipo de prelosa: {tipo}", "info")
+            # Add separator after each row (except last)
+            if idx < len(self.tipos_prelosa) - 1:
+                separator_frame = ttk.Frame(self.tipos_frame, height=1, style="Card.TFrame")
+                separator_frame.pack(fill=tk.X, pady=5)
+                separator = ttk.Separator(separator_frame, orient='horizontal')
+                separator.pack(fill=tk.X)
     
-    def crear_barra_progreso(self, parent):
-        """Crear barra de progreso"""
-        progress_frame = ttk.Frame(parent)
-        progress_frame.pack(fill=tk.X, pady=(0, 15))
+    def create_log_content(self, parent):
+        """Create the log content"""
+        # Section title
+        ttk.Label(
+            parent,
+            text="Registro de Procesamiento",
+            style="Section.TLabel"
+        ).pack(anchor=tk.W, pady=(0, 15))
         
-        self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(
-            progress_frame, 
-            orient=tk.HORIZONTAL, 
-            length=100, 
-            mode='determinate',
-            variable=self.progress_var
-        )
-        self.progress_bar.pack(fill=tk.X)
+        # Log card
+        log_card = ttk.Frame(parent, style="Card.TFrame", padding=20)
+        log_card.pack(fill=tk.BOTH, expand=True)
         
-        # Etiqueta de estado
-        self.status_label = ttk.Label(
-            progress_frame, 
-            text="Listo para procesar", 
-            anchor=tk.CENTER
-        )
-        self.status_label.pack(fill=tk.X, pady=(5, 0))
-    
-    def crear_panel_accion(self, parent):
-        """Crear panel de botones de acción"""
-        action_panel = ttk.Frame(parent, style="Card.TFrame")
-        action_panel.pack(fill=tk.X, pady=(0, 15))
+        # Toolbar
+        toolbar_frame = ttk.Frame(log_card, style="Card.TFrame")
+        toolbar_frame.pack(fill=tk.X, pady=(0, 10))
         
-        # Contenedor centrado para los botones
-        button_container = ttk.Frame(action_panel)
-        button_container.pack(pady=15)
-        
-        # Botón principal
-        self.process_button = ttk.Button(
-            button_container, 
-            text=f"{self.icon_process} PROCESAR PRELOSAS",
-            style="Primary.TButton",
-            command=self.process_dxf
-        )
-        self.process_button.pack(pady=5)
-        
-        # Texto de ayuda
-        hint_label = ttk.Label(
-            button_container,
-            text="Haga clic para procesar el archivo DXF con los parámetros configurados",
-            foreground=self.colors['muted_fg']
-        )
-        hint_label.pack(pady=(5, 0))
-    
-    def crear_panel_registro(self, parent):
-        """Crear panel de registro con formato mejorado"""
-        log_panel = ttk.LabelFrame(parent, text="Registro de Procesamiento", padding=15)
-        log_panel.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-        
-        # Barra de herramientas para el log
-        log_toolbar = ttk.Frame(log_panel)
-        log_toolbar.pack(fill=tk.X, pady=(0, 5))
-        
-        # Botón para limpiar el log
         clear_button = ttk.Button(
-            log_toolbar,
-            text="Limpiar",
-            style="Accent.TButton",
+            toolbar_frame,
+            text="Limpiar Registro",
             command=self.clear_log
         )
         clear_button.pack(side=tk.RIGHT)
         
-        # Área de texto para el registro con etiquetas para formateo
+        # Separator
+        separator = ttk.Separator(log_card, orient='horizontal')
+        separator.pack(fill=tk.X, pady=(0, 10))
+        
+        # Log area with scrollbar
+        log_container = ttk.Frame(log_card, style="Card.TFrame")
+        log_container.pack(fill=tk.BOTH, expand=True)
+        
+        # Create text area for log
         self.log_area = tk.Text(
-            log_panel, 
+            log_container, 
             wrap=tk.WORD, 
-            width=80, 
-            height=15, 
             font=('Consolas', 10),
             bg=self.colors['input_bg'],
-            fg=self.colors['input_fg']
+            fg=self.colors['input_fg'],
+            borderwidth=0,
+            padx=10,
+            pady=10
         )
         
-        # Configurar etiquetas para colorear diferentes tipos de mensajes
+        # Configure tags for coloring different message types
         self.log_area.tag_configure("info", foreground=self.colors['info'])
         self.log_area.tag_configure("success", foreground=self.colors['success'])
         self.log_area.tag_configure("warning", foreground=self.colors['warning'])
@@ -801,60 +735,61 @@ class DXFProcessorApp:
         self.log_area.tag_configure("muted", foreground=self.colors['muted_fg'])
         
         # Scrollbar
-        scrollbar = ttk.Scrollbar(log_panel, orient="vertical", command=self.log_area.yview)
+        scrollbar = ttk.Scrollbar(log_container, orient="vertical", command=self.log_area.yview)
         self.log_area.configure(yscrollcommand=scrollbar.set)
         
-        # Posicionar widgets
+        # Position widgets
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.log_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     
-    def crear_statusbar(self):
-        """Crear barra de estado inferior"""
-        self.status_bar = ttk.Frame(self.master, relief=tk.SUNKEN, style="TFrame")
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+    def update_theme(self):
+        """Toggle between light and dark theme"""
+        self.is_dark_mode.set(not self.is_dark_mode.get())
+        self.update_colors()
+        self.configure_style()
         
-        # Separador
-        separator = ttk.Separator(self.status_bar, orient='horizontal')
-        separator.pack(fill=tk.X)
+        # Update background of main window
+        self.master.configure(background=self.colors['bg'])
         
-        # Contenido de la barra de estado
-        status_frame = ttk.Frame(self.status_bar)
-        status_frame.pack(fill=tk.X, padx=5, pady=2)
+        # Update log area colors
+        if hasattr(self, 'log_area'):
+            self.log_area.config(
+                bg=self.colors['input_bg'],
+                fg=self.colors['input_fg']
+            )
+            
+            # Update tags
+            self.log_area.tag_configure("info", foreground=self.colors['info'])
+            self.log_area.tag_configure("success", foreground=self.colors['success'])
+            self.log_area.tag_configure("warning", foreground=self.colors['warning'])
+            self.log_area.tag_configure("error", foreground=self.colors['error'])
         
-        # Información de versión
-        version_label = ttk.Label(
-            status_frame,
-            text="ACERO SCRIPT v1.0.0",
-            style="Muted.TLabel"
-        )
-        version_label.pack(side=tk.LEFT)
+        # Update canvas background in configuration tab
+        if hasattr(self, 'canvas'):
+            self.canvas.configure(background=self.colors['card_bg'])
         
-        # Información de copyright
-        copyright_label = ttk.Label(
-            status_frame,
-            text="© 2025 DODOD SOLUTIONS",
-            style="Muted.TLabel"
-        )
-        copyright_label.pack(side=tk.RIGHT)
+        # Refresh the tab frames
+        if hasattr(self, 'frames'):
+            # First store which frame is currently active
+            current_tab = self.selected_tab.get()
+            
+            # Recreate the frames
+            for frame in self.frames.values():
+                frame.destroy()
+            
+            self.create_content_frames()
+            
+            # Show the previously active frame
+            self.show_frame(current_tab)
     
-    def mostrar_mensaje_bienvenida(self):
-        """Mostrar mensaje de bienvenida en el área de log"""
-        self.log_area.config(state=tk.NORMAL)
-        self.log_area.delete(1.0, tk.END)
-        
-        self.log_area.insert(tk.END, "=== ACERO SCRIPT - Sistema de Automatización de Prelosas ===\n\n", "bold")
-        self.log_area.insert(tk.END, "Bienvenido al sistema de procesamiento de prelosas.\n\n", "info")
-        self.log_area.insert(tk.END, "Para comenzar:\n", "bold")
-        self.log_area.insert(tk.END, "1. Seleccione un archivo DXF\n")
-        self.log_area.insert(tk.END, "2. Elija una carpeta de salida\n")
-        self.log_area.insert(tk.END, "3. Configure los valores predeterminados según sus necesidades\n")
-        self.log_area.insert(tk.END, "4. Haga clic en PROCESAR PRELOSAS para iniciar el procesamiento\n\n")
-        
-        self.log_area.insert(tk.END, "Los resultados del procesamiento se mostrarán en esta área.\n", "info")
-        self.log_area.config(state=tk.DISABLED)
+    def toggle_theme(self):
+        """Toggle between light and dark theme"""
+        self.is_dark_mode.set(not self.is_dark_mode.get())
+        self.theme_text.set("☀️" if self.is_dark_mode.get() else "🌙")
+        self.update_theme()
     
     def select_dxf_file(self):
-        """Seleccionar archivo DXF"""
+        """Select DXF file"""
         filename = filedialog.askopenfilename(
             title="Seleccionar Archivo DXF",
             filetypes=[("Archivos DXF", "*.dxf")]
@@ -862,19 +797,19 @@ class DXFProcessorApp:
         if filename:
             self.dxf_path.set(filename)
             
-            # Añadir entrada en el log
+            # Add entry to log
             self.add_to_log(f"Archivo DXF seleccionado: {filename}", "info")
             
-            # Sugerir carpeta de salida
+            # Suggest output folder
             default_output = os.path.join(os.path.dirname(filename), "Procesados")
             os.makedirs(default_output, exist_ok=True)
             self.output_path.set(default_output)
             
-            # Actualizar estado
+            # Update status
             self.status_label.config(text=f"Archivo seleccionado: {os.path.basename(filename)}")
     
     def select_output_directory(self):
-        """Seleccionar directorio de salida"""
+        """Select output directory"""
         directory = filedialog.askdirectory(
             title="Seleccionar Carpeta de Salida"
         )
@@ -882,105 +817,238 @@ class DXFProcessorApp:
             self.output_path.set(directory)
             self.add_to_log(f"Carpeta de salida seleccionada: {directory}", "info")
     
-    def process_dxf(self):
-            """Procesar el archivo DXF"""
-            # Validaciones
-            if not self.dxf_path.get():
-                messagebox.showerror("Error", "Debe seleccionar un archivo DXF")
+    def add_new_prelosa_type(self):
+        """Show dialog to add a new prelosa type"""
+        # Crear una ventana de diálogo simple sin dependencias complejas
+        dialog = tk.Toplevel(self.master)
+        dialog.title("Agregar Nuevo Tipo de Prelosa")
+        dialog.geometry("400x300")
+        dialog.resizable(False, False)
+        dialog.transient(self.master)
+        dialog.grab_set()
+        
+        # Aplicar color de fondo
+        dialog.configure(bg=self.colors['bg'])
+        
+        # Título
+        title_label = tk.Label(
+            dialog, 
+            text="Agregar Nuevo Tipo de Prelosa",
+            font=('Arial', 14, 'bold'),
+            bg=self.colors['bg'],
+            fg=self.colors['accent']
+        )
+        title_label.pack(pady=(20, 20), padx=20, anchor='w')
+        
+        # Marco de formulario
+        form_frame = tk.Frame(dialog, bg=self.colors['bg'])
+        form_frame.pack(fill='x', padx=20)
+        
+        # Campo Nombre
+        nombre_label = tk.Label(form_frame, text="Nombre:", bg=self.colors['bg'], fg=self.colors['fg'])
+        nombre_label.grid(row=0, column=0, sticky='w', pady=(0, 15))
+        
+        nombre_var = tk.StringVar()
+        nombre_entry = ttk.Entry(form_frame, textvariable=nombre_var, width=30)
+        nombre_entry.grid(row=0, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
+        nombre_entry.focus()
+        
+        # Campo Espaciamiento
+        espac_label = tk.Label(form_frame, text="Espaciamiento:", bg=self.colors['bg'], fg=self.colors['fg'])
+        espac_label.grid(row=1, column=0, sticky='w', pady=(0, 15))
+        
+        espaciamiento_var = tk.StringVar(value="0.20")
+        espaciamiento_entry = ttk.Entry(form_frame, textvariable=espaciamiento_var, width=10)
+        espaciamiento_entry.grid(row=1, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
+        
+        # Campo Acero
+        acero_label = tk.Label(form_frame, text="Acero:", bg=self.colors['bg'], fg=self.colors['fg'])
+        acero_label.grid(row=2, column=0, sticky='w', pady=(0, 15))
+        
+        acero_var = tk.StringVar(value="3/8\"")
+        acero_combo = ttk.Combobox(
+            form_frame,
+            textvariable=acero_var,
+            values=self.acero_opciones,
+            width=10,
+            state="readonly"
+        )
+        acero_combo.grid(row=2, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
+        
+        # Marco de botones
+        button_frame = tk.Frame(dialog, bg=self.colors['bg'])
+        button_frame.pack(side='bottom', fill='x', padx=20, pady=20)
+        
+        def add_type():
+            nombre = nombre_var.get().strip().upper()
+            if not nombre:
+                messagebox.showerror("Error", "Debe ingresar un nombre para el tipo de prelosa")
                 return
             
-            if not os.path.exists(self.excel_path):
-                messagebox.showerror("Error", f"No se encontró {self.excel_path}")
+            # Check if it already exists
+            if nombre in self.tipos_prelosa:
+                messagebox.showerror("Error", "Ya existe un tipo de prelosa con ese nombre")
                 return
             
-            if not self.output_path.get():
-                messagebox.showerror("Error", "Debe seleccionar un directorio de salida")
-                return
-            
-            # Evitar procesamiento múltiple
-            if self.processing:
-                messagebox.showinfo("Procesando", "Ya hay un proceso en ejecución")
-                return
-            
-            # Crear directorio de salida si no existe
-            os.makedirs(self.output_path.get(), exist_ok=True)
-            
-            # Generar nombre de archivo de salida con número aleatorio
-            nombre_archivo = os.path.splitext(os.path.basename(self.dxf_path.get()))[0]
-            numero_random = self.generar_numero_random()
-            output_dxf_path = os.path.join(
-                self.output_path.get(), 
-                f"{nombre_archivo}_{numero_random}.dxf"
-            )
-            
-            # Preparar valores predeterminados
-            valores_predeterminados = {
-                tipo: {
-                    'espaciamiento': valores['espaciamiento'].get(),
-                    'acero': valores['acero'].get()  # Añadir valor de acero
-                } 
-                for tipo, valores in self.default_values.items()
+            # Add new type
+            self.tipos_prelosa.append(nombre)
+            self.default_values[nombre] = {
+                'espaciamiento': tk.StringVar(value=espaciamiento_var.get()),
+                'acero': tk.StringVar(value=acero_var.get())
             }
-
-            tipos_personalizados = [
-                tipo for tipo in self.tipos_prelosa 
-                if tipo not in ['PRELOSA MACIZA', 'PRELOSA MACIZA 15', 'PRELOSA MACIZA TIPO 3', 'PRELOSA MACIZA TIPO 4',
-                                'PRELOSA ALIGERADA 20', 'PRELOSA ALIGERADA 20 - 2 SENT', 'PRELOSA ALIGERADA 25',
-                                'PRELOSA ALIGERADA 25 - 2 SENT', 'PRELOSA ALIGERADA 30', 'PRELOSA ALIGERADA 30 - 2 SENT']
-            ]
-                    
-            # Limpiar log y mostrar información inicial
-            self.clear_log()
-            self.add_to_log("Iniciando procesamiento de DXF...", "bold")
-            self.add_to_log(f"Archivo de entrada: {self.dxf_path.get()}", "info")
-            self.add_to_log(f"Archivo Excel: {self.excel_path}", "info")
-            self.add_to_log(f"Archivo de salida: {output_dxf_path}", "info")
-            self.add_to_log("Valores predeterminados:", "bold")
             
-            for tipo, valores in valores_predeterminados.items():
-                self.add_to_log(f"  {tipo}: espaciamiento = {valores['espaciamiento']}, acero = {valores['acero']}")
+            # Update table
+            self.render_prelosa_types()
             
-            # Configurar interfaz para procesamiento
-            self.process_button.config(state=tk.DISABLED)
-            self.status_label.config(text="Procesando...")
-            self.progress_var.set(0)
-            self.processing = True
+            # Close dialog
+            dialog.destroy()
             
-            # Iniciar procesamiento en hilo separado
-            self.processing_thread = threading.Thread(
-                target=self.run_processing,
-                args=(self.dxf_path.get(), self.excel_path, output_dxf_path, valores_predeterminados)
-            )
-            self.processing_thread.daemon = True
-            self.processing_thread.start()
-            
-            # Iniciar actualización de progreso
-            self.master.after(100, self.update_progress)
+            # Success message
+            self.add_to_log(f"Se agregó el tipo de prelosa: {nombre}", "success")
+        
+        # Botones: cancelar y agregar
+        cancel_button = tk.Button(
+            button_frame,
+            text="Cancelar",
+            width=10,
+            bg=self.colors['widget_bg'],
+            fg=self.colors['fg'],
+            relief='solid',
+            bd=1,
+            command=dialog.destroy
+        )
+        cancel_button.pack(side='right', padx=5)
+        
+        add_button = tk.Button(
+            button_frame,
+            text="Agregar",
+            width=10,
+            bg=self.colors['accent'],
+            fg='white',
+            relief='solid',
+            bd=1,
+            command=add_type
+        )
+        add_button.pack(side='right', padx=5)
     
-    def run_processing(self, dxf_path, excel_path, output_path, valores_predeterminados):
-        """Ejecutar el procesamiento en un hilo separado"""
+    def delete_prelosa_type(self, tipo):
+        """Delete a custom prelosa type"""
+        # Confirm deletion
+        if messagebox.askyesno(
+            "Confirmar eliminación", 
+            f"¿Está seguro de eliminar el tipo de prelosa '{tipo}'?"
+        ):
+            # Remove from list and dictionary
+            self.tipos_prelosa.remove(tipo)
+            if tipo in self.default_values:
+                del self.default_values[tipo]
+            
+            # Update table
+            self.render_prelosa_types()
+            
+            # Success message
+            self.add_to_log(f"Se eliminó el tipo de prelosa: {tipo}", "info")
+    
+    def process_dxf(self):
+        """Process the DXF file"""
+        # Validations
+        if not self.dxf_path.get():
+            messagebox.showerror("Error", "Debe seleccionar un archivo DXF")
+            return
+        
+        if not os.path.exists(self.excel_path):
+            messagebox.showerror("Error", f"No se encontró {self.excel_path}")
+            return
+        
+        if not self.output_path.get():
+            messagebox.showerror("Error", "Debe seleccionar un directorio de salida")
+            return
+        
+        # Avoid multiple processing
+        if self.processing:
+            messagebox.showinfo("Procesando", "Ya hay un proceso en ejecución")
+            return
+        
+        # Create output directory if it doesn't exist
+        os.makedirs(self.output_path.get(), exist_ok=True)
+        
+        # Generate output filename with random number
+        file_name = os.path.splitext(os.path.basename(self.dxf_path.get()))[0]
+        random_number = self.generate_random_number()
+        output_dxf_path = os.path.join(
+            self.output_path.get(), 
+            f"{file_name}_{random_number}.dxf"
+        )
+        
+        # Prepare default values
+        default_values = {
+            tipo: {
+                'espaciamiento': valores['espaciamiento'].get(),
+                'acero': valores['acero'].get()
+            } 
+            for tipo, valores in self.default_values.items()
+        }
+        
+        custom_types = [
+            tipo for tipo in self.tipos_prelosa 
+            if tipo not in ['PRELOSA MACIZA', 'PRELOSA MACIZA 15',
+                           'PRELOSA ALIGERADA 20', 'PRELOSA ALIGERADA 20 - 2 SENT']
+        ]
+        
+        # Clear log and show initial information
+        self.clear_log()
+        self.add_to_log("Iniciando procesamiento de DXF...", "bold")
+        self.add_to_log(f"Archivo de entrada: {self.dxf_path.get()}", "info")
+        self.add_to_log(f"Archivo Excel: {self.excel_path}", "info")
+        self.add_to_log(f"Archivo de salida: {output_dxf_path}", "info")
+        self.add_to_log("Valores predeterminados:", "bold")
+        
+        for tipo, valores in default_values.items():
+            self.add_to_log(f"  {tipo}: espaciamiento = {valores['espaciamiento']}, acero = {valores['acero']}")
+        
+        # Configure interface for processing
+        self.process_button.config(state=tk.DISABLED)
+        self.status_label.config(text="Procesando...")
+        self.progress_var.set(0)
+        self.processing = True
+        
+        # Start processing in separate thread
+        self.processing_thread = threading.Thread(
+            target=self.run_processing,
+            args=(self.dxf_path.get(), self.excel_path, output_dxf_path, default_values)
+        )
+        self.processing_thread.daemon = True
+        self.processing_thread.start()
+        
+        # Start progress update
+        self.master.after(100, self.update_progress)
+    
+    def run_processing(self, dxf_path, excel_path, output_path, default_values):
+        """Run processing in separate thread"""
         try:
-            # Importar script dinámicamente
+            # Import script dynamically
             script_module = self.import_module_from_path()
             
             if script_module is None:
                 self.add_to_log("Error: No se pudo importar el script", "error")
                 return
             
-            # Ejecutar procesamiento
+            # Run processing
             total = script_module.procesar_prelosas_con_bloques(
                 dxf_path, 
                 excel_path,
                 output_path,
-                valores_predeterminados
+                default_values
             )
             
-            # Actualizar log con el resultado
+            # Update log with result
             self.add_to_log(f"Procesamiento completado. Bloques insertados: {total}", "success")
             
-            # Preguntar si quiere abrir la carpeta
-            if messagebox.askyesno("Procesamiento completado", 
-                                 f"Se han insertado {total} bloques.\n¿Desea abrir la carpeta de destino?"):
+            # Ask if user wants to open folder
+            if messagebox.askyesno(
+                "Procesamiento completado", 
+                f"Se han insertado {total} bloques.\n¿Desea abrir la carpeta de destino?"
+            ):
                 self.open_output_folder(os.path.dirname(output_path))
         
         except Exception as e:
@@ -989,22 +1057,22 @@ class DXFProcessorApp:
             messagebox.showerror("Error", f"Error durante el procesamiento: {str(e)}")
         
         finally:
-            # Restaurar interfaz
+            # Restore interface
             self.master.after(0, self.restore_interface)
     
     def update_progress(self):
-        """Actualizar barra de progreso durante el procesamiento"""
+        """Update progress bar during processing"""
         if not self.processing:
             return
         
-        # Incrementar progreso (simulado)
+        # Increment progress (simulated)
         current = self.progress_var.get()
         if current < 100:
-            # Incremento variable para simular progreso
+            # Variable increment to simulate progress
             increment = min(2, 100 - current)
             self.progress_var.set(current + increment)
         
-        # Verificar si el hilo sigue activo
+        # Check if thread is still active
         if self.processing_thread.is_alive():
             self.master.after(100, self.update_progress)
         else:
@@ -1012,104 +1080,229 @@ class DXFProcessorApp:
             self.status_label.config(text="Procesamiento completado")
     
     def restore_interface(self):
-        """Restaurar interfaz después del procesamiento"""
+        """Restore interface after processing"""
         self.process_button.config(state=tk.NORMAL)
         self.processing = False
     
     def add_to_log(self, message, tag=None):
-        """Añadir mensaje al área de log con formato opcional"""
+        """Add message to log area with optional formatting"""
+        # If log tab doesn't exist, create it
+        if not hasattr(self, 'log_area'):
+            return
+            
         self.log_area.config(state=tk.NORMAL)
         
-        # Añadir timestamp
+        # Add timestamp
         timestamp = time.strftime("%H:%M:%S")
         self.log_area.insert(tk.END, f"[{timestamp}] ", "muted")
         
-        # Añadir mensaje con formato opcional
+        # Add message with optional formatting
         if tag:
             self.log_area.insert(tk.END, f"{message}\n", tag)
         else:
             self.log_area.insert(tk.END, f"{message}\n")
         
-        # Desplazar al final
+        # Scroll to end
         self.log_area.see(tk.END)
         self.log_area.config(state=tk.DISABLED)
+        
+        # If log tab is not visible, show a small indication on the log button
+        if self.selected_tab.get() != 'log':
+            self.nav_buttons['log'].configure(text="📋 Registro (•)")
     
     def clear_log(self):
-        """Limpiar área de log"""
+        """Clear log area"""
         self.log_area.config(state=tk.NORMAL)
         self.log_area.delete(1.0, tk.END)
         self.log_area.config(state=tk.DISABLED)
+        
+        # Reset the log button text
+        self.nav_buttons['log'].configure(text="📋 Registro")
     
-    def toggle_theme(self):
-        """Alternar entre tema claro y oscuro"""
-        self.is_dark_mode.set(not self.is_dark_mode.get())
-        self.update_theme()
+    def show_welcome_message(self):
+        """Display welcome message in the log area"""
+        if not hasattr(self, 'log_area'):
+            # Create log area first by showing the log tab
+            self.show_frame('log')
+            # Then switch back to the processing tab
+            self.show_frame('procesamiento')
+        
+        self.clear_log()
+        
+        self.log_area.config(state=tk.NORMAL)
+        self.log_area.insert(tk.END, "=== ACERO SCRIPT - Sistema de Automatización de Prelosas ===\n\n", "bold")
+        self.log_area.insert(tk.END, "Bienvenido al sistema de procesamiento de prelosas.\n\n", "info")
+        self.log_area.insert(tk.END, "Pasos para comenzar:\n", "bold")
+        self.log_area.insert(tk.END, "1. Seleccione un archivo DXF\n")
+        self.log_area.insert(tk.END, "2. Elija una carpeta de salida\n")
+        self.log_area.insert(tk.END, "3. Configure los valores predeterminados según sus necesidades\n")
+        self.log_area.insert(tk.END, "4. Haga clic en PROCESAR PRELOSAS para iniciar el procesamiento\n\n")
+        
+        self.log_area.insert(tk.END, "Los resultados del procesamiento se mostrarán en esta área.\n", "info")
+        self.log_area.config(state=tk.DISABLED)
     
     def show_about(self):
-        """Mostrar ventana 'Acerca de'"""
+        """Show About window"""
         about_window = tk.Toplevel(self.master)
         about_window.title("Acerca de ACERO SCRIPT")
-        about_window.geometry("400x300")
+        about_window.geometry("450x350")
         about_window.resizable(False, False)
         about_window.transient(self.master)
         about_window.grab_set()
-        
-        # Configurar como modal
         about_window.focus_set()
         
-        # Contenido
-        content_frame = ttk.Frame(about_window, padding=20)
-        content_frame.pack(fill=tk.BOTH, expand=True)
+        # Configure background
+        about_window.configure(background=self.colors['bg'])
         
-        # Título
+        # Content
+        content_frame = ttk.Frame(about_window, style="Card.TFrame", padding=30)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        # Logo (placeholder)
+        logo_label = ttk.Label(
+            content_frame, 
+            text="🏢", 
+            font=('Arial', 48),
+            foreground=self.colors['accent'],
+            background=self.colors['card_bg']
+        )
+        logo_label.pack(pady=(0, 15))
+        
+        # Title
         ttk.Label(
             content_frame, 
             text="ACERO SCRIPT", 
-            font=('Segoe UI', 16, 'bold'),
-            foreground=self.colors['header_fg']
-        ).pack(pady=(0, 10))
+            font=('Arial', 18, 'bold'),
+            foreground=self.colors['accent'],
+            background=self.colors['card_bg']
+        ).pack(pady=(0, 5))
         
-        # Versión
+        # Version
         ttk.Label(
             content_frame,
             text="Versión 1.0.0",
-            font=('Segoe UI', 10)
+            font=('Arial', 12),
+            background=self.colors['card_bg']
         ).pack()
         
-        # Descripción
+        # Description
         ttk.Label(
             content_frame,
             text="Sistema de Automatización para Procesamiento de Prelosas",
             wraplength=350,
-            justify="center"
-        ).pack(pady=10)
+            justify="center",
+            background=self.colors['card_bg'],
+            font=('Arial', 11)
+        ).pack(pady=15)
         
         # Copyright
         ttk.Label(
             content_frame,
             text="© 2025 DODOD SOLUTIONS\nTodos los derechos reservados.",
-            justify="center"
-        ).pack(pady=10)
+            justify="center",
+            background=self.colors['card_bg'],
+            font=('Arial', 10)
+        ).pack(pady=15)
         
-        # Botón de cerrar
+        # Close button
         ttk.Button(
             content_frame,
             text="Cerrar",
             command=about_window.destroy,
-            style="Accent.TButton"
+            style="Primary.TButton"
         ).pack(pady=10)
     
     def show_documentation(self):
-        """Mostrar documentación o ayuda"""
-        # Aquí se podría abrir un archivo PDF o HTML con la documentación
-        messagebox.showinfo(
-            "Documentación",
-            "La documentación completa está disponible en el manual de usuario.\n\n"
-            "Para más información, contacte con soporte@dododsolutions.com"
+        """Show documentation or help"""
+        help_window = tk.Toplevel(self.master)
+        help_window.title("Ayuda - ACERO SCRIPT")
+        help_window.geometry("600x500")
+        help_window.transient(self.master)
+        help_window.grab_set()
+        help_window.focus_set()
+        
+        # Configure background
+        help_window.configure(background=self.colors['bg'])
+        
+        # Content frame
+        main_frame = ttk.Frame(help_window, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        ttk.Label(
+            main_frame,
+            text="Documentación de ACERO SCRIPT",
+            style="Section.TLabel"
+        ).pack(anchor=tk.W, pady=(0, 15))
+        
+        # Help content in a card
+        help_card = ttk.Frame(main_frame, style="Card.TFrame", padding=20)
+        help_card.pack(fill=tk.BOTH, expand=True)
+        
+        # Create text area for help content
+        help_text = tk.Text(
+            help_card,
+            wrap=tk.WORD,
+            width=70,
+            height=20,
+            font=('Arial', 11),
+            bg=self.colors['card_bg'],
+            fg=self.colors['fg'],
+            borderwidth=0,
+            padx=10,
+            pady=10
         )
+        
+        # Add scrollbar
+        scrollbar = ttk.Scrollbar(help_card, orient="vertical", command=help_text.yview)
+        help_text.configure(yscrollcommand=scrollbar.set)
+        
+        # Position widgets
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        help_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add help content
+        help_text.insert(tk.END, "Guía de Usuario - ACERO SCRIPT\n\n", ("title",))
+        help_text.insert(tk.END, "ACERO SCRIPT es una aplicación para automatizar el procesamiento de archivos DXF de prelosas. A continuación se detallan los pasos para utilizar la aplicación:\n\n")
+        
+        help_text.insert(tk.END, "1. Pestaña de Procesamiento\n", ("section",))
+        help_text.insert(tk.END, "   - Seleccione un archivo DXF utilizando el botón 'Explorar'\n")
+        help_text.insert(tk.END, "   - El archivo Excel CONVERTIDOR.xlsx se utiliza automáticamente\n")
+        help_text.insert(tk.END, "   - Seleccione una carpeta de destino para los archivos procesados\n")
+        help_text.insert(tk.END, "   - Haga clic en 'PROCESAR PRELOSAS' para iniciar el procesamiento\n\n")
+        
+        help_text.insert(tk.END, "2. Pestaña de Configuración\n", ("section",))
+        help_text.insert(tk.END, "   - Configure los espaciamientos y tipos de acero para cada tipo de prelosa\n")
+        help_text.insert(tk.END, "   - Puede agregar nuevos tipos de prelosa utilizando el botón correspondiente\n")
+        help_text.insert(tk.END, "   - Los tipos personalizados pueden ser eliminados si ya no se necesitan\n\n")
+        
+        help_text.insert(tk.END, "3. Pestaña de Registro\n", ("section",))
+        help_text.insert(tk.END, "   - Muestra un registro detallado del procesamiento\n")
+        help_text.insert(tk.END, "   - Puede limpiar el registro con el botón 'Limpiar Registro'\n\n")
+        
+        help_text.insert(tk.END, "Para más información o soporte técnico, contacte a soporte@dododsolutions.com\n\n")
+        
+        # Configure text tags
+        help_text.tag_configure("title", font=('Arial', 14, 'bold'), foreground=self.colors['accent'])
+        help_text.tag_configure("section", font=('Arial', 12, 'bold'))
+        
+        # Make text read-only
+        help_text.config(state=tk.DISABLED)
+        
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=(15, 0))
+        
+        # Close button
+        ttk.Button(
+            button_frame,
+            text="Cerrar",
+            command=help_window.destroy,
+            style="Primary.TButton"
+        ).pack(side=tk.RIGHT)
     
     def open_output_folder(self, folder_path):
-        """Abrir la carpeta de salida"""
+        """Open output folder"""
         try:
             if platform.system() == "Windows":
                 os.startfile(folder_path)
@@ -1120,59 +1313,29 @@ class DXFProcessorApp:
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo abrir la carpeta: {str(e)}")
     
-    def create_tooltip(self, widget, text):
-        """Crear tooltip para un widget"""
-        def enter(event):
-            x, y, _, _ = widget.bbox("insert")
-            x += widget.winfo_rootx() + 25
-            y += widget.winfo_rooty() + 25
-            
-            # Crear ventana de tooltip
-            self.tooltip = tk.Toplevel(widget)
-            self.tooltip.wm_overrideredirect(True)
-            self.tooltip.wm_geometry(f"+{x}+{y}")
-            
-            label = ttk.Label(
-                self.tooltip, 
-                text=text, 
-                background=self.colors['info'],
-                foreground="white",
-                relief="solid", 
-                borderwidth=1,
-                padding=5
-            )
-            label.pack()
-        
-        def leave(event):
-            if hasattr(self, 'tooltip'):
-                self.tooltip.destroy()
-        
-        widget.bind("<Enter>", enter)
-        widget.bind("<Leave>", leave)
-    
-    def generar_numero_random(self, digitos=2):
-        """Genera un número aleatorio con el número de dígitos especificado"""
-        min_valor = 10 ** (digitos - 1)
-        max_valor = (10 ** digitos) - 1
-        return random.randint(min_valor, max_valor)
+    def generate_random_number(self, digits=2):
+        """Generate random number with specified number of digits"""
+        min_value = 10 ** (digits - 1)
+        max_value = (10 ** digits) - 1
+        return random.randint(min_value, max_value)
     
     def import_module_from_path(self):
-        """Importar script.py dinámicamente"""
+        """Import script.py dynamically"""
         try:
-            # Primero, intenta encontrar el script en la ubicación del ejecutable
+            # First, try to find the script in the executable location
             if getattr(sys, 'frozen', False):
-                # Si es un ejecutable compilado
+                # If it's a compiled executable
                 script_path = os.path.join(sys._MEIPASS, 'script.py')
             else:
-                # Si se ejecuta como script normal
+                # If running as a normal script
                 script_path = os.path.join(os.path.dirname(__file__), 'script.py')
             
-            # Verificar si el archivo existe
+            # Check if file exists
             if not os.path.exists(script_path):
                 self.add_to_log(f"Error: No se encontró script.py en {script_path}", "error")
                 return None
             
-            # Importar el módulo
+            # Import module
             spec = importlib.util.spec_from_file_location("script", script_path)
             script = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(script)
@@ -1182,9 +1345,10 @@ class DXFProcessorApp:
             self.add_to_log(traceback.format_exc(), "error")
             return None
 
+
 def main():
-    """Función principal"""
-    # Configurar tema de alta DPI para Windows
+    """Main function"""
+    # Configure high DPI theme for Windows
     if platform.system() == "Windows":
         try:
             from ctypes import windll
@@ -1192,11 +1356,11 @@ def main():
         except:
             pass
     
-    # Iniciar GUI
+    # Start GUI
     root = tk.Tk()
     root.title("ACERO SCRIPT - DODOD SOLUTIONS")
     
-    # Configurar icono si existe
+    # Configure icon if it exists
     try:
         icon_path = os.path.join(os.path.dirname(__file__), "icon.ico")
         if os.path.exists(icon_path):
@@ -1204,10 +1368,10 @@ def main():
     except:
         pass
     
-    # Crear aplicación
+    # Create application
     app = DXFProcessorApp(root)
     
-    # Centrar ventana
+    # Center window
     root.update_idletasks()
     width = root.winfo_width()
     height = root.winfo_height()
@@ -1215,8 +1379,9 @@ def main():
     y = (root.winfo_screenheight() // 2) - (height // 2)
     root.geometry(f'{width}x{height}+{x}+{y}')
     
-    # Iniciar bucle principal
+    # Start main loop
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
