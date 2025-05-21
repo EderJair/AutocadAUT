@@ -503,19 +503,23 @@ class DXFProcessorApp:
         # Variables to store default values
         self.default_values = {
             'PRELOSA MACIZA': {
-                'espaciamiento': tk.StringVar(value='0.20'),
+                'espaciamiento_long': tk.StringVar(value='0.20'),
+                'espaciamiento_trans': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA MACIZA 15': {
-                'espaciamiento': tk.StringVar(value='0.15'),
+                'espaciamiento_long': tk.StringVar(value='0.15'),
+                'espaciamiento_trans': tk.StringVar(value='0.15'),
                 'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 20': {
-                'espaciamiento': tk.StringVar(value='0.20'),
+                'espaciamiento_long': tk.StringVar(value='0.20'),
+                'espaciamiento_trans': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             },
             'PRELOSA ALIGERADA 20 - 2 SENT': {
-                'espaciamiento': tk.StringVar(value='0.20'),
+                'espaciamiento_long': tk.StringVar(value='0.20'),
+                'espaciamiento_trans': tk.StringVar(value='0.20'),
                 'acero': tk.StringVar(value='3/8"')
             }
         }
@@ -536,9 +540,10 @@ class DXFProcessorApp:
         self.config_card.pack(fill=tk.BOTH, expand=True)
         
         # Headers
+        # Headers
         headers_frame = ttk.Frame(self.config_card, style="Card.TFrame")
         headers_frame.pack(fill=tk.X, pady=(0, 10))
-        
+
         ttk.Label(
             headers_frame, 
             text="Tipo de Prelosa",
@@ -547,16 +552,25 @@ class DXFProcessorApp:
             foreground=self.colors['accent'],
             width=30
         ).grid(row=0, column=0, padx=(0, 15), sticky='w')
-        
+
         ttk.Label(
             headers_frame, 
-            text="Espaciamiento",
+            text="Esp. Longitudinal",
             font=('Arial', 11, 'bold'),
             background=self.colors['card_bg'],
             foreground=self.colors['accent'],
             width=15
         ).grid(row=0, column=1, padx=5, sticky='w')
-        
+
+        ttk.Label(
+            headers_frame, 
+            text="Esp. Transversal",
+            font=('Arial', 11, 'bold'),
+            background=self.colors['card_bg'],
+            foreground=self.colors['accent'],
+            width=15
+        ).grid(row=0, column=2, padx=5, sticky='w')
+
         ttk.Label(
             headers_frame, 
             text="Acero",
@@ -564,8 +578,8 @@ class DXFProcessorApp:
             background=self.colors['card_bg'],
             foreground=self.colors['accent'],
             width=10
-        ).grid(row=0, column=2, padx=5, sticky='w')
-        
+        ).grid(row=0, column=3, padx=5, sticky='w')
+
         ttk.Label(
             headers_frame, 
             text="Acciones",
@@ -573,7 +587,7 @@ class DXFProcessorApp:
             background=self.colors['card_bg'],
             foreground=self.colors['accent'],
             width=10
-        ).grid(row=0, column=3, padx=5, sticky='w')
+        ).grid(row=0, column=4, padx=5, sticky='w')
         
         # Separator
         separator = ttk.Separator(self.config_card, orient='horizontal')
@@ -643,13 +657,21 @@ class DXFProcessorApp:
                 width=30
             ).grid(row=0, column=0, padx=(0, 15), sticky='w')
             
-            # Spacing entry
-            spacing_entry = ttk.Entry(
+            # Longitudinal spacing entry
+            spacing_long_entry = ttk.Entry(
                 row_frame, 
-                textvariable=self.default_values[tipo]['espaciamiento'],
+                textvariable=self.default_values[tipo]['espaciamiento_long'],
                 width=15
             )
-            spacing_entry.grid(row=0, column=1, padx=5, sticky='w')
+            spacing_long_entry.grid(row=0, column=1, padx=5, sticky='w')
+            
+            # Transversal spacing entry
+            spacing_trans_entry = ttk.Entry(
+                row_frame, 
+                textvariable=self.default_values[tipo]['espaciamiento_trans'],
+                width=15
+            )
+            spacing_trans_entry.grid(row=0, column=2, padx=5, sticky='w')
             
             # Steel combobox
             steel_combo = ttk.Combobox(
@@ -659,7 +681,7 @@ class DXFProcessorApp:
                 width=10,
                 state="readonly"
             )
-            steel_combo.grid(row=0, column=2, padx=5, sticky='w')
+            steel_combo.grid(row=0, column=3, padx=5, sticky='w')
             
             # Delete button (only for custom types)
             predefined_types = [
@@ -673,15 +695,15 @@ class DXFProcessorApp:
                     text="Eliminar",
                     command=lambda t=tipo: self.delete_prelosa_type(t)
                 )
-                delete_button.grid(row=0, column=3, padx=5, sticky='w')
+                delete_button.grid(row=0, column=4, padx=5, sticky='w')
             
             # Add separator after each row (except last)
             if idx < len(self.tipos_prelosa) - 1:
                 separator_frame = ttk.Frame(self.tipos_frame, height=1, style="Card.TFrame")
                 separator_frame.pack(fill=tk.X, pady=5)
                 separator = ttk.Separator(separator_frame, orient='horizontal')
-                separator.pack(fill=tk.X)
-    
+            separator.pack(fill=tk.X)
+
     def create_log_content(self, parent):
         """Create the log content"""
         # Section title
@@ -822,7 +844,7 @@ class DXFProcessorApp:
         # Crear una ventana de diálogo simple sin dependencias complejas
         dialog = tk.Toplevel(self.master)
         dialog.title("Agregar Nuevo Tipo de Prelosa")
-        dialog.geometry("400x300")
+        dialog.geometry("400x350")  # Aumentar altura para el nuevo campo
         dialog.resizable(False, False)
         dialog.transient(self.master)
         dialog.grab_set()
@@ -853,17 +875,25 @@ class DXFProcessorApp:
         nombre_entry.grid(row=0, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
         nombre_entry.focus()
         
-        # Campo Espaciamiento
-        espac_label = tk.Label(form_frame, text="Espaciamiento:", bg=self.colors['bg'], fg=self.colors['fg'])
-        espac_label.grid(row=1, column=0, sticky='w', pady=(0, 15))
+        # Campo Espaciamiento Longitudinal
+        espac_long_label = tk.Label(form_frame, text="Espaciamiento Long:", bg=self.colors['bg'], fg=self.colors['fg'])
+        espac_long_label.grid(row=1, column=0, sticky='w', pady=(0, 15))
         
-        espaciamiento_var = tk.StringVar(value="0.20")
-        espaciamiento_entry = ttk.Entry(form_frame, textvariable=espaciamiento_var, width=10)
-        espaciamiento_entry.grid(row=1, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
+        espaciamiento_long_var = tk.StringVar(value="0.20")
+        espaciamiento_long_entry = ttk.Entry(form_frame, textvariable=espaciamiento_long_var, width=10)
+        espaciamiento_long_entry.grid(row=1, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
+        
+        # Campo Espaciamiento Transversal
+        espac_trans_label = tk.Label(form_frame, text="Espaciamiento Trans:", bg=self.colors['bg'], fg=self.colors['fg'])
+        espac_trans_label.grid(row=2, column=0, sticky='w', pady=(0, 15))
+        
+        espaciamiento_trans_var = tk.StringVar(value="0.20")
+        espaciamiento_trans_entry = ttk.Entry(form_frame, textvariable=espaciamiento_trans_var, width=10)
+        espaciamiento_trans_entry.grid(row=2, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
         
         # Campo Acero
         acero_label = tk.Label(form_frame, text="Acero:", bg=self.colors['bg'], fg=self.colors['fg'])
-        acero_label.grid(row=2, column=0, sticky='w', pady=(0, 15))
+        acero_label.grid(row=3, column=0, sticky='w', pady=(0, 15))
         
         acero_var = tk.StringVar(value="3/8\"")
         acero_combo = ttk.Combobox(
@@ -873,7 +903,7 @@ class DXFProcessorApp:
             width=10,
             state="readonly"
         )
-        acero_combo.grid(row=2, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
+        acero_combo.grid(row=3, column=1, sticky='w', padx=(15, 0), pady=(0, 15))
         
         # Marco de botones
         button_frame = tk.Frame(dialog, bg=self.colors['bg'])
@@ -893,7 +923,8 @@ class DXFProcessorApp:
             # Add new type
             self.tipos_prelosa.append(nombre)
             self.default_values[nombre] = {
-                'espaciamiento': tk.StringVar(value=espaciamiento_var.get()),
+                'espaciamiento_long': tk.StringVar(value=espaciamiento_long_var.get()),
+                'espaciamiento_trans': tk.StringVar(value=espaciamiento_trans_var.get()),
                 'acero': tk.StringVar(value=acero_var.get())
             }
             
@@ -930,7 +961,7 @@ class DXFProcessorApp:
             command=add_type
         )
         add_button.pack(side='right', padx=5)
-    
+
     def delete_prelosa_type(self, tipo):
         """Delete a custom prelosa type"""
         # Confirm deletion
@@ -981,9 +1012,11 @@ class DXFProcessorApp:
         )
         
         # Prepare default values
+        # Prepare default values
         default_values = {
             tipo: {
-                'espaciamiento': valores['espaciamiento'].get(),
+                'espaciamiento_long': valores['espaciamiento_long'].get(),
+                'espaciamiento_trans': valores['espaciamiento_trans'].get(),
                 'acero': valores['acero'].get()
             } 
             for tipo, valores in self.default_values.items()
@@ -1003,8 +1036,9 @@ class DXFProcessorApp:
         self.add_to_log(f"Archivo de salida: {output_dxf_path}", "info")
         self.add_to_log("Valores predeterminados:", "bold")
         
+# Add to log
         for tipo, valores in default_values.items():
-            self.add_to_log(f"  {tipo}: espaciamiento = {valores['espaciamiento']}, acero = {valores['acero']}")
+            self.add_to_log(f"  {tipo}: esp. long = {valores['espaciamiento_long']}, esp. trans = {valores['espaciamiento_trans']}, acero = {valores['acero']}")
         
         # Configure interface for processing
         self.process_button.config(state=tk.DISABLED)

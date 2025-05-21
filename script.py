@@ -34,12 +34,13 @@ def reemplazar_caracteres_especiales(texto):
     texto = re.sub(r'\\[A-Za-z0-9]+;', '', texto)
     return texto
 
-# Función para obtener textos dentro de una polilínea
 def obtener_textos_dentro_de_polilinea(polilinea, textos, capa_polilinea=None):
-
     vertices = [(p[0], p[1]) for p in polilinea]
     poligono = Polygon(vertices)
     textos_en_polilinea = []
+    
+    # NUEVO: Lista para almacenar textos potencialmente fragmentados
+    textos_fragmentados = []
     
     # Determinar orientación de la polilínea
     xs = [v[0] for v in vertices]
@@ -142,8 +143,44 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos, capa_polilinea=None):
         
         # Por defecto, si no se detectaron patrones claros, ser conservador y rechazar el texto
         return False
+    
+    # NUEVO: Función para limpiar y normalizar el símbolo del diámetro en formato especial
+    def limpiar_simbolo_diametro(texto):
+        # Si el texto contiene un símbolo de diámetro con formato especial
+        if re.search(r'\\f.*Symbol.*[Ø∅]', texto):
+            # Intentar extraer solo el símbolo
+            return "Ø"
+        return texto
+    
+    # NUEVO: Función para identificar si un texto es un número, símbolo de diámetro o medida
+    def clasificar_fragmento(texto):
+        texto = texto.strip()
+        # Es un formato especial de símbolo de diámetro
+        if re.search(r'\\f.*Symbol.*[Ø∅]', texto):
+            return "SIMBOLO_ESPECIAL"
+        # Es un número solo
+        elif re.match(r'^\d+$', texto):
+            return "NUMERO"
+        # Es un símbolo de diámetro solo
+        elif texto in ["Ø", "∅"]:
+            return "SIMBOLO"
+        # Es una medida (con pulgadas o mm)
+        elif re.match(r'^[\d/]+"', texto) or re.match(r'^\d+\s*mm', texto) or "(Inf.)" in texto:
+            return "MEDIDA"
+        # Es una notación completa con (Inf.)
+        elif "Inf" in texto and ("3/8" in texto or "1/2" in texto):
+            return "MEDIDA_COMPLETA"
+        # No es ninguno de los anteriores
+        return "OTRO"
 
-    # Recorremos todos los elementos
+    # Recorremos todos los elementos para recopilar los textos y sus posiciones
+    textos_detallados = []
+    
+    # NUEVO: Procesar primero el caso especial del símbolo con formato especial
+    tiene_simbolo_especial = False
+    simbolo_especial_pos = None
+    
+    # Primera pasada: recopilar todos los textos y sus posiciones
     for elemento in textos:
         # Procesar textos normales (TEXT, MTEXT)
         if elemento.dxftype() in ['TEXT', 'MTEXT']:
@@ -157,12 +194,84 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos, capa_polilinea=None):
                 # Aplicar validaciones de formato
                 texto_formateado = validar_formato_texto(texto_contenido)
                 
-                # NUEVO: Validar si el texto tiene formato de acero antes de añadirlo
-                if texto_formateado.strip() and es_formato_acero_valido(texto_formateado):
-                    print(f"Encontrado texto: {texto_formateado}")
-                    textos_en_polilinea.append(texto_formateado)
-                else:
-                    print(f"Texto descartado (formato no válido): {texto_formateado}")
+                # Identificar símbolos especiales
+                tipo = clasificar_fragmento(texto_formateado)
+                if tipo == "SIMBOLO_ESPECIAL":
+                    tiene_simbolo_especial = True
+                    simbolo_especial_pos = (elemento.dxf.insert[0], elemento.dxf.insert[1])
+                
+                # Almacenar el texto y su posición
+                if texto_formateado.strip():
+                    textos_detallados.append({
+                        'texto': texto_formateado,
+                        'x': elemento.dxf.insert[0],
+                        'y': elemento.dxf.insert[1],
+                        'tipo': tipo,
+                        'procesado': False
+                    })
+    
+    # NUEVO: Procesar específicamente el caso del símbolo especial
+    textos_procesados = []
+    
+    # Si tenemos un símbolo especial, intentamos combinarlo con medidas cercanas
+    if tiene_simbolo_especial:
+        textos_medida = [t for t in textos_detallados if t['tipo'] == "MEDIDA" or t['tipo'] == "MEDIDA_COMPLETA"]
+        simbolos_especiales = [t for t in textos_detallados if t['tipo'] == "SIMBOLO_ESPECIAL"]
+        
+        # NUEVA LÓGICA: Intentar crear una especificación para cada medida usando el símbolo especial
+        for medida in textos_medida:
+            # Por defecto, asumimos un "1" como cantidad
+            cantidad = "1"
+            
+            # Buscar si hay un número cercano que podría ser la cantidad
+            numeros_cercanos = [t for t in textos_detallados if t['tipo'] == "NUMERO"]
+            if numeros_cercanos:
+                # Usar el número más cercano horizontalmente a la medida
+                numeros_cercanos.sort(key=lambda n: abs(n['x'] - medida['x']) + abs(n['y'] - medida['y']) * 2)
+                cantidad = numeros_cercanos[0]['texto']
+                numeros_cercanos[0]['procesado'] = True
+            
+            # Crear la especificación completa: cantidad + símbolo + medida
+            especificacion = f"{cantidad}Ø{medida['texto']}"
+            print(f"Formando especificación combinada: {especificacion}")
+            textos_procesados.append(especificacion)
+            medida['procesado'] = True
+        
+        # Marcar todos los símbolos especiales como procesados
+        for simbolo in simbolos_especiales:
+            simbolo['procesado'] = True
+    
+    # Procesar los textos que ya son válidos individualmente
+    for texto in textos_detallados:
+        if not texto['procesado'] and es_formato_acero_valido(texto['texto']):
+            textos_procesados.append(texto['texto'])
+            texto['procesado'] = True
+    
+    # NUEVO: Verificar si quedaron textos de medida sin procesar (sin combinar con símbolo)
+    for texto in textos_detallados:
+        if not texto['procesado'] and (texto['tipo'] == "MEDIDA" or texto['tipo'] == "MEDIDA_COMPLETA"):
+            # Si es una medida válida por sí sola, la añadimos
+            if es_formato_acero_valido(texto['texto']):
+                textos_procesados.append(texto['texto'])
+                texto['procesado'] = True
+    
+    # NUEVO: Si no se procesó ningún texto pero hay medidas y símbolos, forzar la combinación
+    if not textos_procesados:
+        medidas = [t for t in textos_detallados if t['tipo'] == "MEDIDA" or t['tipo'] == "MEDIDA_COMPLETA"]
+        for medida in medidas:
+            # Añadir la medida con un "1Ø" prefijado
+            textos_procesados.append(f"1Ø{medida['texto']}")
+            print(f"Forzando combinación para medida: 1Ø{medida['texto']}")
+            medida['procesado'] = True
+    
+    # Ahora procesar normalmente para capturar los casos que no son textos fragmentados
+    # (Bloques, atributos, etc.)
+    
+    # Recorremos todos los elementos
+    for elemento in textos:
+        # Procesar textos normales (TEXT, MTEXT) - ya los procesamos arriba
+        if elemento.dxftype() in ['TEXT', 'MTEXT']:
+            continue  # Ya procesado arriba
         
         # MEJORA PARA BLOQUES: Detectar bloques incluso si solo intersectan parcialmente
         elif elemento.dxftype() == 'INSERT':
@@ -208,7 +317,7 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos, capa_polilinea=None):
                                     # NUEVO: Validar formato de acero
                                     if texto_formateado.strip() and es_formato_acero_valido(texto_formateado):
                                         print(f"Texto extraído del interior del bloque: {texto_formateado}")
-                                        textos_en_polilinea.append(texto_formateado)
+                                        textos_procesados.append(texto_formateado)
                                     else:
                                         print(f"Texto de bloque descartado (formato no válido): {texto_formateado}")
                                 except Exception as e:
@@ -231,7 +340,7 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos, capa_polilinea=None):
                                     # NUEVO: Validar formato de acero
                                     if texto_formateado.strip() and es_formato_acero_valido(texto_formateado):
                                         print(f"Encontrado atributo en bloque: {attrib.dxf.tag} = {texto_formateado}")
-                                        textos_en_polilinea.append(texto_formateado)
+                                        textos_procesados.append(texto_formateado)
                                         atributos_encontrados = True
                                     else:
                                         print(f"Atributo descartado (formato no válido): {texto_formateado}")
@@ -249,7 +358,7 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos, capa_polilinea=None):
                                     # NUEVO: Validar formato de acero
                                     if texto_formateado.strip() and es_formato_acero_valido(texto_formateado):
                                         print(f"Encontrado atributo (método 3): {attrib.dxf.tag} = {texto_formateado}")
-                                        textos_en_polilinea.append(texto_formateado)
+                                        textos_procesados.append(texto_formateado)
                                         atributos_encontrados = True
                                     else:
                                         print(f"Atributo descartado (método 3, formato no válido): {texto_formateado}")
@@ -261,9 +370,14 @@ def obtener_textos_dentro_de_polilinea(polilinea, textos, capa_polilinea=None):
                 else:
                     print(f"No se encontraron atributos relevantes en bloque en posición ({elemento.dxf.insert[0]}, {elemento.dxf.insert[1]})")
 
+    # Eliminar posibles duplicados manteniendo el orden
+    textos_en_polilinea = []
+    for texto in textos_procesados:
+        if texto not in textos_en_polilinea:
+            textos_en_polilinea.append(texto)
+    
     print(f"Total de {len(textos_en_polilinea)} textos/atributos encontrados dentro de la polilínea")
     return textos_en_polilinea
-
 # Función para obtener polilíneas dentro de una polilínea principal
 def obtener_polilineas_dentro_de_polilinea(polilinea_principal, polilineas_anidadas):
     """
@@ -504,9 +618,12 @@ def insertar_bloque_acero(msp, definicion_bloque, centro, as_long, as_tra1, as_t
         ancho_polilinea = definicion_bloque.get('polilinea_ancho', 0)
         alto_polilinea = definicion_bloque.get('polilinea_alto', 0)
         
-        # Escala base: usar la del bloque original
-        xscale = xscale_original
-        yscale = yscale_original
+        # MODIFICADO: Factor de aumento para hacer el bloque un poco más grande
+        factor_aumento = 1.25  # Aumenta el tamaño en un 25%
+        
+        # Escala base: usar la del bloque original con el factor de aumento
+        xscale = xscale_original * factor_aumento
+        yscale = yscale_original * factor_aumento
         
         # Si la polilínea es muy pequeña y las escalas originales son demasiado grandes, 
         # ajustar con un factor de reducción
@@ -515,15 +632,15 @@ def insertar_bloque_acero(msp, definicion_bloque, centro, as_long, as_tra1, as_t
             area_polilinea = ancho_polilinea * alto_polilinea
             limite_area = 100  # Valor de ejemplo, ajustar según necesidad
             
-            if area_polilinea < limite_area and (xscale_original > 0.5 or yscale_original > 0.5):
+            if area_polilinea < limite_area and (xscale > 0.5 or yscale > 0.5):
                 factor_reduccion = min(1.0, area_polilinea / limite_area)
-                xscale = xscale_original * factor_reduccion
-                yscale = yscale_original * factor_reduccion
+                xscale = xscale * factor_reduccion
+                yscale = yscale * factor_reduccion
                 print(f"    Reduciendo escala para polilínea pequeña. Factor: {factor_reduccion:.3f}")
         
-        print(f"    Usando escala del bloque original: X={xscale:.3f}, Y={yscale:.3f}")
+        print(f"    Usando escala ajustada: X={xscale:.3f}, Y={yscale:.3f} (original * {factor_aumento})")
         
-        # Insertar el bloque con la rotación ajustada y escala del bloque original
+        # Insertar el bloque con la rotación ajustada y escala modificada
         bloque = msp.add_blockref(
             name=definicion_bloque['nombre'],
             insert=centro,
@@ -602,7 +719,6 @@ def insertar_bloque_acero(msp, definicion_bloque, centro, as_long, as_tra1, as_t
         print(f"Error global al insertar bloque: {e}")
         traceback.print_exc()
         return None
-
 
 # Función para desbloquear la capa de acero positivo
 def desbloquear_capa_acero_positivo(doc):
@@ -841,15 +957,23 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
         
         # Print all layer names in the DXF file
         def clasificar_tipo_prelosa(tipo):
-            """Determina la categoría base de la prelosa según su nombre"""
-            if "MACIZA" in tipo.upper():
+            
+            tipo_upper = tipo.upper()
+            
+            # Primero verificar el caso especial de ALI-MAC
+            if "ALI-MAC" in tipo_upper:
+                return "ALIGERADA_2SENT"  # Las prelosas ALI-MAC se comportan como aligeradas 2 sent
+            
+            # Luego verificar los casos normales
+            if "MACIZA" in tipo_upper:
                 return "MACIZA"
-            elif "ALIGERADA" in tipo.upper() and "2 SENT" in tipo.upper():
+            elif "ALIGERADA" in tipo_upper and "2 SENT" in tipo_upper:
                 return "ALIGERADA_2SENT"
-            elif "ALIGERADA" in tipo.upper():
+            elif "ALIGERADA" in tipo_upper:
                 return "ALIGERADA"
             else:
                 # Si no se reconoce, usar maciza por defecto
+                print(f"ADVERTENCIA: Tipo de prelosa no reconocido: {tipo}. Usando MACIZA por defecto.")
                 return "MACIZA"
 
         def calcular_orientacion_prelosa(vertices, polilineas_longitudinal=None, polilineas_long_adi=None):
@@ -1124,8 +1248,9 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             resultado["diametro_con_comillas"] = convertir_diametro(diametro_alt)
                         else:
                             # Caso específico para milímetros
+                            # Caso específico para milímetros (con tolerancia a espacios)
                             if "mm" in texto_limpio.lower():
-                                mm_match = re.search(r'∅?(\d+)(?:mm\.?|\.?mm)', texto_limpio, re.IGNORECASE)
+                                mm_match = re.search(r'∅?\s*(\d+)\s*(?:mm\.?|\.?mm)', texto_limpio, re.IGNORECASE)
                                 if mm_match:
                                     diametro = mm_match.group(1)
                                     resultado["diametro_con_comillas"] = f"{diametro}mm"
@@ -1957,7 +2082,6 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 
                 print("=== FIN PROCESAMIENTO PRELOSA ALIGERADA ===\n")
 
-
             elif categoria_base == "ALIGERADA_2SENT":
                 print("\n=== PROCESANDO PRELOSA ALIGERADA - 2 SENT ===")
                 
@@ -1986,6 +2110,11 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         texto_limpio = formato_match.group(1)
                         print(f"  → Limpiando formato DXF: '{texto}' -> '{texto_limpio}'")
                     
+                    # CORREGIDO: Caso específico para '1Ø 8 mm@.175(Inf.)' y similares con espacios
+                    match = re.search(r'^\d+Ø\s*(\d+)\s*mm', texto_limpio)
+                    if match:
+                        return f"{match.group(1)}mm"
+                    
                     # Caso específico para patrones como "1∅1/2"" o "1∅5/8""
                     match = re.search(r'^\d+∅([\d/]+\")', texto_limpio)
                     if match:
@@ -2013,14 +2142,14 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     if match:
                         return convertir_diametro(match.group(1))
                     
-                    # Caso específico para milímetros
+                    # CORREGIDO: Caso para milímetros con posible espacio entre número y 'mm'
                     if "mm" in texto_limpio.lower():
-                        match = re.search(r'∅?(\d+)(?:mm\.?|\.?mm)', texto_limpio, re.IGNORECASE)
+                        match = re.search(r'∅?\s*(\d+)\s*(?:mm\.?|\.?mm)', texto_limpio, re.IGNORECASE)
                         if match:
                             return f"{match.group(1)}mm"
                     
                     # Caso para fraccionales
-                    match = re.search(r'∅?([\d/]+)', texto_limpio)
+                    match = re.search(r'∅?\s*([\d/]+)', texto_limpio)
                     if match:
                         diametro = match.group(1)
                         # Si es un número simple y el texto menciona mm, aplicar formato mm
@@ -2031,6 +2160,12 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                             return f"{diametro}\""
                         else:
                             return diametro
+                    
+                    # NUEVO: Verificar cualquier número seguido de mm (con espacio opcional)
+                    if "mm" in texto_limpio.lower():
+                        match = re.search(r'(\d+)\s*mm', texto_limpio, re.IGNORECASE)
+                        if match:
+                            return f"{match.group(1)}mm"
                     
                     return None  # No se pudo extraer diámetro
 
@@ -2063,6 +2198,11 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                         
                         # Extraer diámetro del texto usando la función auxiliar
                         diametro_con_comillas = extraer_diametro(texto_limpio)
+                        
+                        # NUEVO: Verificación adicional para casos específicos como "1Ø 8 mm@.50(Inf.)"
+                        if not diametro_con_comillas and ("8 mm" in texto_limpio or "8mm" in texto_limpio):
+                            print(f"  → Detectado '8 mm' en el texto pero no se extrajo correctamente, forzando a '8mm'")
+                            diametro_con_comillas = "8mm"
                         
                         if diametro_con_comillas:
                             print(f"  → Diámetro extraído: {diametro_con_comillas}")
@@ -2131,9 +2271,32 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                     if len(textos_transversal) >= 3:
                         procesar_texto_acero(textos_transversal[2], 'G16', 'H16', 'J16')
                 
+                # NUEVO: Si no hay textos transversales, colocar valores predeterminados para transversales
+                if len(textos_transversal) == 0:
+                    print("No se encontraron textos transversales. Colocando valores por defecto para transversales:")
+                    
+                    # Colocar valores predeterminados para transversales (usando los que vienen del tkinter)
+                    ws.range('G14').value = 1
+                    ws.range('H14').value = acero_predeterminado
+                    ws.range('J14').value = espaciamiento_predeterminado
+                
                 # Si no hay textos principales pero hay adicionales, poner valores predeterminados
                 if len(textos_longitudinal) == 0 and len(textos_transversal) == 0 and (len(textos_long_adi) > 0 or len(textos_tra_adi) > 0):
                     print("No se encontraron textos principales pero hay adicionales. Colocando valores por defecto:")
+                    
+                    # Colocar valores por defecto para longitudinales
+                    ws.range('G4').value = 1
+                    ws.range('H4').value = acero_predeterminado
+                    ws.range('J4').value = espaciamiento_predeterminado
+                    
+                    # Colocar valores por defecto para transversales
+                    ws.range('G14').value = 1
+                    ws.range('H14').value = acero_predeterminado
+                    ws.range('J14').value = espaciamiento_predeterminado
+                
+                # NUEVO: Si no hay textos de ningún tipo, colocar valores predeterminados
+                if len(textos_longitudinal) == 0 and len(textos_transversal) == 0 and len(textos_long_adi) == 0 and len(textos_tra_adi) == 0:
+                    print("No se encontraron textos de ningún tipo. Colocando valores predeterminados:")
                     
                     # Colocar valores por defecto para longitudinales
                     ws.range('G4').value = 1
@@ -2286,7 +2449,7 @@ def procesar_prelosas_con_bloques(file_path, excel_path, output_dxf_path, valore
                 # Limpiar celdas para evitar interferencias en futuros cálculos
                 
                 print("=== FIN PROCESAMIENTO PRELOSA ALIGERADA - 2 SENT ===\n")
-            
+                
             else:
                 # Procesar acero horizontal (G4, H4, J4)
                 for i, texto in textos_longitudinal:
