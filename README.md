@@ -5,11 +5,17 @@ ACERO_SCRIPT es una herramienta especializada para automatizar el cálculo y la 
 🚀 Características
 
 ✅ Procesamiento automático de planos DXF de prelosas
+
 ✅ Detección inteligente de textos de especificación de aceros
+
 ✅ Cálculo de valores estructurales mediante integración con Excel
+
 ✅ Soporte para múltiples tipos de prelosas (macizas, aligeradas, bidireccionales)
+
 ✅ Interfaz gráfica intuitiva desarrollada con tkinter
+
 ✅ Generación automática de bloques con atributos de acero en planos
+
 ✅ Configuración personalizable de valores predeterminados
 
 🛠️ Componentes Principales
